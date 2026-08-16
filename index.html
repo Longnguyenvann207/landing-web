@@ -3,6 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (function() {
+        try {
+          var _f = window.fetch;
+          if (_f) {
+            Object.defineProperty(window, 'fetch', {
+              get: function() { return _f; },
+              set: function() { console.warn('Blocked attempt to overwrite fetch'); },
+              configurable: true
+            });
+          }
+        } catch (e) {}
+      })();
+    </script>
     <title>Sky Luxury Media - Dịch vụ MMO & Unlock Tài Khoản Chuyên Nghiệp</title>
     <meta name="description" content="Sky Luxury Media cung cấp dịch vụ mở khóa tài khoản Facebook, TikTok, tăng follow, seeding và tool MMO chuyên nghiệp. Xử lý nhanh 5-30 phút, bảo mật tuyệt đối, cam kết hoàn tiền 100%." />
     <meta name="keywords" content="unlock facebook, mở khóa tiktok, seeding facebook, tăng follow tiktok, tool mmo, dịch vụ mmo, sky luxury media, bảo mật tài khoản" />
@@ -16,7 +30,43 @@
     <meta name="twitter:description" content="Xử lý tài khoản bị khóa chỉ trong 5-30 phút. Cam kết hoàn tiền 100%. Dịch vụ MMO & Seeding chuyên nghiệp." />
     <meta name="twitter:image" content="https://picsum.photos/seed/luxury/1200/630" />
     <link rel="canonical" href="https://skyluxury.media" />
-    <link rel="icon" type="image/svg+xml" href="https://picsum.photos/seed/luxury/32/32" />
+    <link rel="icon" type="image/png" href="https://picsum.photos/seed/luxury/32/32" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "ProfessionalService",
+        "name": "Sky Luxury Media",
+        "image": "https://picsum.photos/seed/luxury/1200/630",
+        "@id": "https://skyluxury.media",
+        "url": "https://skyluxury.media",
+        "telephone": "+84334063029",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Luxury District",
+          "addressLocality": "Ho Chi Minh City",
+          "addressCountry": "VN"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 10.762622,
+          "longitude": 106.660172
+        },
+        "openingHoursSpecification": {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday"
+          ],
+          "opens": "00:00",
+          "closes": "23:59"
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

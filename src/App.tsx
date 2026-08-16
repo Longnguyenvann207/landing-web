@@ -6,9 +6,7 @@
 import React, { useState, useEffect, useRef, createContext, useContext, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
-import { GoogleGenAI } from "@google/genai";
 import { CookieConsent } from './components/CookieConsent';
-import ReCAPTCHA from 'react-google-recaptcha';
 import { 
   ShieldCheck, 
   Zap, 
@@ -16,7 +14,7 @@ import {
   TrendingUp, 
   Users, 
   Wrench, 
-  CheckCircle2, 
+  CheckCircle, 
   MessageCircle, 
   MessageSquare,
   Search,
@@ -48,7 +46,9 @@ import {
   Facebook,
   Instagram,
   Linkedin,
-  Twitter
+  Twitter,
+  Cpu,
+  Rocket
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { translations } from './translations';
@@ -56,6 +56,13 @@ import { translations } from './translations';
 // --- Types ---
 type Language = 'vi' | 'en';
 type Theme = 'dark' | 'light';
+
+interface Testimonial {
+  name: string;
+  role: string;
+  content: string;
+  rating: number;
+}
 
 interface LanguageContextType {
   lang: Language;
@@ -89,27 +96,6 @@ const useTranslation = () => {
 const ZALO_LINK = 'https://zalo.me/0334063029';
 const PHONE_NUMBER = '0334063029';
 
-const TESTIMONIALS = [
-  {
-    name: "Trần Minh Tâm",
-    role: "Kinh doanh Online",
-    content: "Dịch vụ unlock tài khoản cực nhanh. Mình bị khóa FB Ads mà team xử lý chỉ trong 15 phút. Rất chuyên nghiệp!",
-    rating: 5
-  },
-  {
-    name: "Lê Hoàng Nam",
-    role: "TikToker",
-    content: "Kênh TikTok của mình tăng trưởng vượt bậc sau khi sử dụng dịch vụ seeding và tư vấn của Sky Luxury Media. Cảm ơn team!",
-    rating: 5
-  },
-  {
-    name: "Nguyễn Thùy Chi",
-    role: "Chủ Shop Thời Trang",
-    content: "Bảo mật thông tin tuyệt đối là điều mình thích nhất ở đây. Tool MMO chạy rất mượt, giúp mình tiết kiệm nhiều thời gian.",
-    rating: 5
-  }
-];
-
 const STATS = [
   { label: "Tài khoản mở khóa", value: "5,000+", icon: <Lock size={24} /> },
   { label: "Chiến dịch seeding", value: "10,000+", icon: <Users size={24} /> },
@@ -121,7 +107,7 @@ const PROCESS = [
   { title: "Tiếp nhận", desc: "Kiểm tra tình trạng tài khoản/yêu cầu.", icon: <ClipboardList size={28} /> },
   { title: "Tư vấn", desc: "Đưa ra giải pháp & báo giá chi tiết.", icon: <MessageCircle size={28} /> },
   { title: "Xử lý", desc: "Kỹ thuật viên thực hiện (5-30 phút).", icon: <Zap size={28} /> },
-  { title: "Bàn giao", desc: "Kiểm tra kết quả & bảo hành.", icon: <CheckCircle2 size={28} /> },
+  { title: "Bàn giao", desc: "Kiểm tra kết quả & bảo hành.", icon: <CheckCircle size={28} /> },
 ];
 
 const FAQS = [
@@ -150,7 +136,7 @@ const SOCIAL_PROOFS = [
   "Shop Bé Xinh vừa hoàn thành gói Seeding - 15 phút trước"
 ];
 
-const TopBanner = () => {
+const TopBanner = memo(() => {
   const { t } = useTranslation();
   return (
     <div className="bg-luxury-gold text-luxury-black py-2 overflow-hidden whitespace-nowrap relative z-[101]">
@@ -163,34 +149,34 @@ const TopBanner = () => {
       </div>
     </div>
   );
-};
+});
 
-const BackgroundParticles = () => {
+const BackgroundParticles = memo(() => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
     const container = containerRef.current;
-    const count = 30;
+    const count = 20; // Reduced count for better performance
 
     for (let i = 0; i < count; i++) {
       const particle = document.createElement('div');
       particle.className = 'particle';
-      const size = Math.random() * 3 + 1;
+      const size = Math.random() * 2 + 1;
       particle.style.width = `${size}px`;
       particle.style.height = `${size}px`;
       particle.style.left = `${Math.random() * 100}%`;
       particle.style.top = `${Math.random() * 100}%`;
-      particle.style.animationDuration = `${Math.random() * 10 + 10}s`;
+      particle.style.animationDuration = `${Math.random() * 10 + 15}s`;
       particle.style.animationDelay = `${Math.random() * 5}s`;
       container.appendChild(particle);
     }
   }, []);
 
   return <div ref={containerRef} className="fixed inset-0 pointer-events-none z-0 overflow-hidden" />;
-};
+});
 
-const BentoGrid = () => {
+const BentoGrid = memo(() => {
   const { t } = useTranslation();
   return (
     <section className="py-24 relative">
@@ -269,9 +255,9 @@ const BentoGrid = () => {
       </div>
     </section>
   );
-};
+});
 
-const KeySellingPointsBento = () => {
+const KeySellingPointsBento = memo(() => {
   const { t } = useTranslation();
   return (
     <section className="py-24 relative">
@@ -307,7 +293,7 @@ const KeySellingPointsBento = () => {
       </div>
     </section>
   );
-};
+});
 
 const MockTool = () => {
   const [inputValue, setInputValue] = useState('');
@@ -390,7 +376,7 @@ const MockTool = () => {
                   animate={{ opacity: 1, y: 0 }}
                   className="mt-8 p-6 bg-luxury-green/10 border border-luxury-green/20 rounded-2xl flex items-center gap-4"
                 >
-                  <CheckCircle2 className="text-luxury-green" size={28} />
+                  <CheckCircle className="text-luxury-green" size={28} />
                   <div>
                     <h4 className="text-luxury-green font-black">{t('mockTool.successTitle')}</h4>
                     <p className="text-white/50 text-sm">{t('mockTool.successDesc')}</p>
@@ -443,10 +429,10 @@ const PRICING = [
 ];
 
 const PAYMENTS = [
-  { name: "Vietcombank", logo: "https://img.mservice.com.vn/app/img/payment/vcb.png" },
-  { name: "Momo", logo: "https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" },
-  { name: "MB Bank", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Logo_MB_Bank.png/1200px-Logo_MB_Bank.png" },
-  { name: "Binance", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Binance_Logo.png/1200px-Binance_Logo.png" },
+  { name: "Vietcombank", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Logo_Vietcombank.svg/512px-Logo_Vietcombank.svg.png" },
+  { name: "Momo", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Logo_MoMo.png/512px-Logo_MoMo.png" },
+  { name: "MB Bank", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Logo_MB_Bank.png/512px-Logo_MB_Bank.png" },
+  { name: "Binance", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Binance_Logo.svg/512px-Binance_Logo.svg.png" },
 ];
 
 const SOCIAL_LINKS = [
@@ -458,34 +444,51 @@ const SOCIAL_LINKS = [
 
 // --- Components ---
 
-const CustomCursor = () => {
+const CustomCursor = memo(() => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [dotPosition, setDotPosition] = useState({ x: 0, y: 0 });
+  const requestRef = useRef<number>(null);
+  const mouseRef = useRef({ x: 0, y: 0 });
 
-  useEffect(() => {
-    const moveCursor = (e: MouseEvent) => {
-      setPosition({ x: e.clientX, y: e.clientY });
-      setTimeout(() => {
-        setDotPosition({ x: e.clientX, y: e.clientY });
-      }, 50);
-    };
-    window.addEventListener('mousemove', moveCursor);
-    return () => window.removeEventListener('mousemove', moveCursor);
+  const animate = useCallback(() => {
+    setPosition(prev => ({
+      x: prev.x + (mouseRef.current.x - prev.x) * 0.15,
+      y: prev.y + (mouseRef.current.y - prev.y) * 0.15,
+    }));
+    setDotPosition(prev => ({
+      x: prev.x + (mouseRef.current.x - prev.x) * 0.25,
+      y: prev.y + (mouseRef.current.y - prev.y) * 0.25,
+    }));
+    requestRef.current = requestAnimationFrame(animate);
   }, []);
 
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      mouseRef.current = { x: e.clientX, y: e.clientY };
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    requestRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
+    };
+  }, [animate]);
+
   return (
-    <div className="hidden lg:block">
+    <div className="hidden lg:block pointer-events-none">
       <div 
-        className="custom-cursor" 
+        className="custom-cursor fixed z-[9999] w-8 h-8 border border-luxury-gold/50 rounded-full" 
         style={{ left: `${position.x}px`, top: `${position.y}px`, transform: 'translate(-50%, -50%)' }}
       />
       <div 
-        className="custom-cursor-dot" 
+        className="custom-cursor-dot fixed z-[9999] w-1 h-1 bg-luxury-gold rounded-full" 
         style={{ left: `${dotPosition.x}px`, top: `${dotPosition.y}px`, transform: 'translate(-50%, -50%)' }}
       />
     </div>
   );
-};
+});
 
 const ScrollProgress = () => {
   const [scroll, setScroll] = useState(0);
@@ -551,7 +554,11 @@ const Navbar = () => {
   return (
     <nav className={`fixed top-0 left-0 w-full z-[100] transition-all duration-500 ${isScrolled ? 'bg-luxury-black/80 backdrop-blur-xl py-4 border-b border-white/5' : 'bg-transparent py-6'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-        <a href="#" className="text-2xl font-black tracking-tighter flex items-center gap-2">
+        <a 
+          href="#" 
+          onClick={() => setIsMobileMenuOpen(false)}
+          className="text-2xl font-black tracking-tighter flex items-center gap-2"
+        >
           <Zap className="text-luxury-gold" size={28} />
           <span>SKY LUXURY <span className="text-luxury-gold">MEDIA</span></span>
         </a>
@@ -692,7 +699,7 @@ const Navbar = () => {
   );
 };
 
-const PricingSection = () => {
+const PricingSection = memo(() => {
   const { t } = useTranslation();
   const [isYearly, setIsYearly] = useState(false);
   const plans = t('pricing.plans');
@@ -757,7 +764,7 @@ const PricingSection = () => {
                 {plan.features.map((f: string, j: number) => (
                   <li key={j} className="flex items-center gap-4 text-white/60 group-hover:text-white transition-colors">
                     <div className="w-5 h-5 rounded-full bg-luxury-gold/10 flex items-center justify-center flex-shrink-0">
-                      <CheckCircle2 size={12} className="text-luxury-gold" />
+                      <CheckCircle size={12} className="text-luxury-gold" />
                     </div>
                     <span className="text-sm font-medium">{f}</span>
                   </li>
@@ -775,7 +782,7 @@ const PricingSection = () => {
       </div>
     </section>
   );
-};
+});
 
 const PaymentSection = () => {
   const { t } = useTranslation();
@@ -795,11 +802,11 @@ const PaymentSection = () => {
 const TrustSection = () => {
   const { t } = useTranslation();
   const logos = [
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Facebook_Logo_%282019%29.png/1200px-Facebook_Logo_%282019%29.png",
-    "https://upload.wikimedia.org/wikipedia/en/thumb/a/a9/TikTok_logo.svg/1200px-TikTok_logo.svg.png",
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/LinkedIn_logo_initials.png/600px-LinkedIn_logo_initials.png",
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/1200px-Instagram_icon.png",
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/2021_Facebook_icon.svg/1200px-2021_Facebook_icon.svg.png"
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Facebook_Logo_%282019%29.png/512px-Facebook_Logo_%282019%29.png",
+    "https://upload.wikimedia.org/wikipedia/en/thumb/a/a9/TikTok_logo.svg/512px-TikTok_logo.svg.png",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/LinkedIn_logo_initials.png/512px-LinkedIn_logo_initials.png",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/512px-Instagram_icon.png",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/2021_Facebook_icon.svg/512px-2021_Facebook_icon.svg.png"
   ];
 
   return (
@@ -844,7 +851,7 @@ const CaseStudiesSection = () => {
               </div>
               <h3 className="text-xl font-black mb-4">{c.title}</h3>
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-luxury-green/10 text-luxury-green rounded-full text-xs font-bold">
-                <CheckCircle2 size={14} />
+                <CheckCircle size={14} />
                 {c.result}
               </div>
             </motion.div>
@@ -928,36 +935,29 @@ const AIChatAssistant = () => {
     setIsTyping(true);
 
     try {
-      if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'YOUR_API_KEY') {
-        throw new Error('GEMINI_API_KEY is not configured');
-      }
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      
       // Use a sliding window for history to avoid token limit issues
       const history = messages.slice(-10).map(m => ({
         role: m.role === 'user' ? 'user' : 'model',
         parts: [{ text: m.text }]
       }));
 
-      const chat = ai.chats.create({
-        model: "gemini-3-flash-preview",
-        config: {
-          systemInstruction: "You are Sky Luxury Media's AI assistant. You help customers with social media services (unlocking FB/TikTok, seeding, MMO tools). Be professional, elite, and helpful. Keep answers concise. If asked about prices, refer to the pricing section. If asked for direct support, suggest Zalo or the contact form.",
-          maxOutputTokens: 1000
-        },
-        history: history
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMsg, history })
       });
-
-      const response = await chat.sendMessage({ message: userMsg });
       
-      setMessages(prev => [...prev, { role: 'ai', text: response.text || t('aiChat.error') }]);
+      if (!response.ok) {
+        throw new Error('Failed to get AI response');
+      }
+
+      const data = await response.json();
+      setMessages(prev => [...prev, { role: 'ai', text: data.text || t('aiChat.error') }]);
     } catch (error: any) {
       console.error('AI Chat Error:', error);
       let errorMsg = t('aiChat.error');
-      if (error.message?.includes('Failed to fetch')) {
+      if (error.message?.includes('Failed to fetch') || error.message?.includes('Network')) {
         errorMsg = t('aiChat.networkError') || 'Network error. Please check your connection.';
-      } else if (error.message?.includes('not configured')) {
-        errorMsg = t('aiChat.configError') || 'AI service is not configured yet.';
       }
       setMessages(prev => [...prev, { role: 'ai', text: errorMsg }]);
     } finally {
@@ -1341,7 +1341,7 @@ const QuickService = () => {
               <div className="grid grid-cols-2 gap-4 mb-8">
                 {['Facebook', 'TikTok', 'Gmail', 'Ads'].map((item) => (
                   <div key={item} className="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5">
-                    <CheckCircle2 className="text-luxury-gold" size={20} />
+                    <CheckCircle className="text-luxury-gold" size={20} />
                     <span className="font-bold">{item}</span>
                   </div>
                 ))}
@@ -1393,28 +1393,28 @@ const Services = () => {
       title: t('services.unlock.title'),
       desc: t('services.unlock.desc'),
       features: t('services.unlock.features'),
-      icon: <Lock size={32} />,
+      icon: <ShieldCheck size={32} />,
       color: "luxury-gold"
     },
     {
       title: t('services.tiktok.title'),
       desc: t('services.tiktok.desc'),
       features: t('services.tiktok.features'),
-      icon: <TrendingUp size={32} />,
+      icon: <Zap size={32} />,
       color: "luxury-neon"
     },
     {
       title: t('services.seeding.title'),
       desc: t('services.seeding.desc'),
       features: t('services.seeding.features'),
-      icon: <Users size={32} />,
+      icon: <MessageSquare size={32} />,
       color: "luxury-gold"
     },
     {
       title: t('services.mmo.title'),
       desc: t('services.mmo.desc'),
       features: t('services.mmo.features'),
-      icon: <Wrench size={32} />,
+      icon: <Cpu size={32} />,
       color: "white"
     }
   ];
@@ -1435,10 +1435,10 @@ const Services = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              whileHover={{ y: -10 }}
-              className="p-8 bg-glass rounded-[2.5rem] border border-white/5 hover:border-luxury-gold/40 transition-all group flex flex-col h-full"
+              whileHover={{ y: -15, scale: 1.02, backgroundColor: "rgba(255, 255, 255, 0.05)" }}
+              className="p-8 bg-glass rounded-[2.5rem] border border-white/5 hover:border-luxury-gold/40 transition-all group flex flex-col h-full cursor-pointer shadow-2xl"
             >
-              <div className={`w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-6 text-${s.color} group-hover:scale-110 transition-transform shadow-xl`}>
+              <div className={`w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-6 text-${s.color} group-hover:scale-125 transition-all duration-500 shadow-xl group-hover:shadow-luxury-gold/20`}>
                 {s.icon}
               </div>
               <h3 className="text-2xl font-black mb-4">{s.title}</h3>
@@ -1462,18 +1462,19 @@ const Services = () => {
   );
 };
 
-const Testimonials = () => {
+const Testimonials = ({ list }: { list: Testimonial[] }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const { t } = useTranslation();
-  const testimonials = t('testimonials.list');
 
   const next = () => {
-    setCurrentIndex((prev) => (prev + 1) % testimonials.length);
+    setCurrentIndex((prev) => (prev + 1) % list.length);
   };
 
   const prev = () => {
-    setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+    setCurrentIndex((prev) => (prev - 1 + list.length) % list.length);
   };
+
+  if (list.length === 0) return null;
 
   return (
     <section className="py-24 relative overflow-hidden">
@@ -1487,27 +1488,34 @@ const Testimonials = () => {
           <AnimatePresence mode="wait">
             <motion.div
               key={currentIndex}
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -50 }}
-              transition={{ duration: 0.4 }}
+              initial={{ opacity: 0, scale: 0.98, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 1.02, y: -20 }}
+              transition={{ 
+                duration: 0.5,
+                ease: [0.23, 1, 0.32, 1]
+              }}
               className="bg-glass p-10 md:p-16 rounded-[3rem] border-white/5 relative text-center"
             >
               <Quote className="absolute top-8 left-8 text-luxury-gold/20" size={60} />
               
               <div className="flex justify-center gap-1 mb-6">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={20} className="fill-luxury-gold text-luxury-gold" />
+                  <Star 
+                    key={i} 
+                    size={20} 
+                    className={`${i < (list[currentIndex]?.rating || 5) ? 'fill-luxury-gold text-luxury-gold' : 'text-white/20'}`} 
+                  />
                 ))}
               </div>
 
               <p className="text-xl md:text-2xl italic text-white/80 mb-8 leading-relaxed">
-                "{testimonials[currentIndex].content}"
+                "{list[currentIndex].content}"
               </p>
 
               <div>
-                <h4 className="text-xl font-black text-luxury-gold">{testimonials[currentIndex].name}</h4>
-                <p className="text-white/40 uppercase tracking-widest text-xs mt-1">{testimonials[currentIndex].role}</p>
+                <h4 className="text-xl font-black text-luxury-gold">{list[currentIndex].name}</h4>
+                <p className="text-white/40 uppercase tracking-widest text-xs mt-1">{list[currentIndex].role}</p>
               </div>
             </motion.div>
           </AnimatePresence>
@@ -1530,7 +1538,7 @@ const Testimonials = () => {
 
           {/* Indicators */}
           <div className="flex justify-center gap-2 mt-8">
-            {TESTIMONIALS.map((_, i) => (
+            {list.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrentIndex(i)}
@@ -1544,19 +1552,120 @@ const Testimonials = () => {
   );
 };
 
+const SubmitTestimonial = ({ onAdd }: { onAdd: (t: Testimonial) => void }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    role: '',
+    content: '',
+    rating: 5
+  });
+  const [submitted, setSubmitted] = useState(false);
+  const { t } = useTranslation();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (formData.name && formData.content) {
+      onAdd(formData);
+      setSubmitted(true);
+      setFormData({ name: '', role: '', content: '', rating: 5 });
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#D4AF37', '#FFFFFF', '#000000']
+      });
+      setTimeout(() => setSubmitted(false), 5000);
+    }
+  };
+
+  return (
+    <section className="py-24 bg-white/[0.02]">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-black mb-4 uppercase">{t('testimonials.submitTitle')}</h2>
+          <p className="text-white/60">{t('testimonials.submitDesc')}</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="bg-glass p-8 md:p-12 rounded-[2.5rem] border-white/5 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-luxury-gold ml-2">{t('testimonials.formName')}</label>
+              <input 
+                type="text"
+                required
+                value={formData.name}
+                onChange={e => setFormData({...formData, name: e.target.value})}
+                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-luxury-gold transition-colors"
+                placeholder="John Doe"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-luxury-gold ml-2">{t('testimonials.formRole')}</label>
+              <input 
+                type="text"
+                value={formData.role}
+                onChange={e => setFormData({...formData, role: e.target.value})}
+                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-luxury-gold transition-colors"
+                placeholder="CEO @ Luxury Brand"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-luxury-gold ml-2">{t('testimonials.formRating')}</label>
+            <div className="flex gap-2 ml-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setFormData({...formData, rating: star})}
+                  className="transition-transform hover:scale-125"
+                >
+                  <Star 
+                    size={32} 
+                    className={`${star <= formData.rating ? 'fill-luxury-gold text-luxury-gold' : 'text-white/20'}`} 
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-luxury-gold ml-2">{t('testimonials.formContent')}</label>
+            <textarea 
+              required
+              rows={4}
+              value={formData.content}
+              onChange={e => setFormData({...formData, content: e.target.value})}
+              className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-luxury-gold transition-colors resize-none"
+              placeholder="..."
+            />
+          </div>
+
+          <button 
+            type="submit"
+            className="w-full bg-luxury-gold text-luxury-black font-black py-5 rounded-2xl shadow-[0_10px_30px_rgba(212,175,55,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all uppercase tracking-widest"
+          >
+            {submitted ? t('testimonials.formSuccess') : t('testimonials.formBtnSubmit')}
+          </button>
+        </form>
+      </div>
+    </section>
+  );
+};
+
 const ContactForm = () => {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     service: 'Unlock tài khoản'
   });
-  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [errors, setErrors] = useState<{ name?: string; phone?: string; recaptcha?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
   const { t } = useTranslation();
 
   const validate = () => {
-    const newErrors: { name?: string; phone?: string; recaptcha?: string } = {};
+    const newErrors: { name?: string; phone?: string } = {};
     if (!formData.name.trim()) {
       newErrors.name = t('contact.errorName');
     }
@@ -1565,9 +1674,6 @@ const ContactForm = () => {
       newErrors.phone = t('contact.errorPhoneEmpty');
     } else if (!phoneRegex.test(formData.phone)) {
       newErrors.phone = t('contact.errorPhoneInvalid');
-    }
-    if (import.meta.env.VITE_RECAPTCHA_SITE_KEY && !recaptchaToken) {
-      newErrors.recaptcha = 'Vui lòng xác thực reCAPTCHA';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -1582,13 +1688,12 @@ const ContactForm = () => {
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({...formData, recaptchaToken})
+        body: JSON.stringify(formData)
       });
 
       if (response.ok) {
         setStatus('success');
         setFormData({ name: '', phone: '', service: 'Unlock tài khoản' });
-        setRecaptchaToken(null);
         setTimeout(() => setStatus('idle'), 5000);
       } else {
         const errorData = await response.json().catch(() => ({}));
@@ -1666,19 +1771,6 @@ const ContactForm = () => {
               </select>
             </div>
 
-            {import.meta.env.VITE_RECAPTCHA_SITE_KEY ? (
-              <div className="space-y-2">
-                <ReCAPTCHA
-                  sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-                  onChange={setRecaptchaToken}
-                  theme="dark"
-                />
-                {errors.recaptcha && <p className="text-red-500 text-[10px] mt-1 ml-2 font-bold uppercase tracking-widest">{errors.recaptcha}</p>}
-              </div>
-            ) : (
-              <p className="text-red-500 text-xs mt-2">reCAPTCHA chưa được cấu hình. Vui lòng liên hệ quản trị viên.</p>
-            )}
-
             <button 
               type="submit"
               disabled={status === 'loading'}
@@ -1722,14 +1814,8 @@ const ZaloButton = () => {
       className="fixed bottom-8 right-8 z-[100] group"
     >
       <div className="absolute inset-0 bg-blue-500 rounded-full animate-pulse-ring opacity-30" />
-      <div className="relative w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center shadow-2xl animate-glow-pulse group-hover:scale-110 transition-transform animate-shake">
-        <img 
-          src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Icon_of_Zalo.svg/1200px-Icon_of_Zalo.svg.png" 
-          alt="Zalo" 
-          className="w-10 h-10"
-          referrerPolicy="no-referrer"
-          decoding="async"
-        />
+      <div className="relative w-16 h-16 bg-[#0068ff] rounded-full flex items-center justify-center shadow-2xl animate-glow-pulse group-hover:scale-110 transition-transform animate-shake">
+        <MessageCircle size={32} className="text-white fill-white" />
       </div>
       <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 bg-white text-blue-600 px-4 py-2 rounded-xl font-black text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-xl pointer-events-none">
         Chat Zalo ngay!
@@ -1780,7 +1866,7 @@ const ProcessSection = () => {
     <MessageSquare size={24} />,
     <Search size={24} />,
     <Zap size={24} />,
-    <CheckCircle2 size={24} />
+    <CheckCircle size={24} />
   ];
 
   return (
@@ -1805,7 +1891,7 @@ const ProcessSection = () => {
               className="relative z-10 p-8 bg-glass rounded-[2.5rem] border-white/5 text-center group hover:border-luxury-gold/30 transition-all"
             >
               <div className="w-16 h-16 bg-luxury-gold text-luxury-black rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl group-hover:scale-110 transition-transform">
-                {icons[i] || <CheckCircle2 size={24} />}
+                {icons[i] || <CheckCircle size={24} />}
               </div>
               <div className="text-xs font-black text-luxury-gold mb-2 uppercase tracking-widest">{t('process.step')} {i + 1}</div>
               <h3 className="text-xl font-black mb-3">{step.title}</h3>
@@ -1818,77 +1904,114 @@ const ProcessSection = () => {
   );
 };
 
-const FAQSection = () => {
+const FAQSection = memo(() => {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const [searchQuery, setSearchQuery] = useState('');
   const { t } = useTranslation();
   const faqs = t('faq.list');
+
+  const filteredFaqs = Array.isArray(faqs) ? faqs.filter((faq: any) => 
+    faq.q.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    faq.a.toLowerCase().includes(searchQuery.toLowerCase())
+  ) : [];
 
   return (
     <section className="py-24 bg-white/[0.01]" id="faq">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
+        <div className="text-center mb-12">
           <h2 className="text-4xl md:text-5xl font-black mb-4 uppercase tracking-tighter">{t('faq.title')}</h2>
-          <div className="w-24 h-1 bg-luxury-gold mx-auto rounded-full" />
+          <div className="w-24 h-1 bg-luxury-gold mx-auto rounded-full mb-8" />
+          
+          {/* Search Input */}
+          <div className="relative max-w-md mx-auto group">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-luxury-gold/50 group-focus-within:text-luxury-gold transition-colors" size={20} />
+            <input 
+              type="text"
+              placeholder={t('faq.searchPlaceholder') || "Tìm kiếm câu hỏi..."}
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setOpenIndex(null);
+              }}
+              className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-14 pr-6 focus:border-luxury-gold/50 outline-none transition-all placeholder:text-white/20"
+            />
+          </div>
         </div>
 
         <div className="space-y-4">
-          {Array.isArray(faqs) && faqs.map((faq: any, i: number) => {
-            const isOpen = openIndex === i;
-            return (
-              <motion.div 
-                key={i}
-                initial={false}
-                animate={{ 
-                  backgroundColor: isOpen ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.01)',
-                  borderColor: isOpen ? 'rgba(212, 175, 55, 0.2)' : 'rgba(255, 255, 255, 0.05)'
-                }}
-                className="bg-glass rounded-[2rem] border overflow-hidden transition-all duration-500"
-              >
-                <button
-                  onClick={() => setOpenIndex(isOpen ? null : i)}
-                  className="w-full p-8 flex items-center justify-between text-left group"
+          {filteredFaqs.length > 0 ? (
+            filteredFaqs.map((faq: any, i: number) => {
+              const isOpen = openIndex === i;
+              return (
+                <motion.div 
+                  key={i}
+                  layout
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ 
+                    opacity: 1, 
+                    y: 0,
+                    backgroundColor: isOpen ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.01)',
+                    borderColor: isOpen ? 'rgba(212, 175, 55, 0.2)' : 'rgba(255, 255, 255, 0.05)'
+                  }}
+                  className="bg-glass rounded-[2rem] border overflow-hidden transition-all duration-500"
                 >
-                  <div className="flex items-center gap-6">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${isOpen ? 'bg-luxury-gold text-luxury-black' : 'bg-white/5 text-luxury-gold'}`}>
-                      <HelpCircle size={24} />
-                    </div>
-                    <span className={`text-xl font-black transition-colors duration-500 ${isOpen ? 'text-white' : 'text-white/70 group-hover:text-white'}`}>
-                      {faq.q}
-                    </span>
-                  </div>
-                  <div className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-500 ${isOpen ? 'border-luxury-gold text-luxury-gold rotate-180' : 'border-white/10 text-white/40'}`}>
-                    {isOpen ? <Minus size={20} /> : <Plus size={20} />}
-                  </div>
-                </button>
-                
-                <AnimatePresence initial={false}>
-                  {isOpen && (
-                    <motion.div
-                      key="content"
-                      initial="collapsed"
-                      animate="open"
-                      exit="collapsed"
-                      variants={{
-                        open: { opacity: 1, height: "auto" },
-                        collapsed: { opacity: 0, height: 0 }
-                      }}
-                      transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
-                    >
-                      <div className="px-8 pb-8 pl-[5.5rem] text-white/50 text-lg leading-relaxed">
-                        <div className="w-full h-px bg-white/5 mb-6" />
-                        {faq.a}
+                  <button
+                    onClick={() => setOpenIndex(isOpen ? null : i)}
+                    className="w-full p-8 flex items-center justify-between text-left group"
+                  >
+                    <div className="flex items-center gap-6">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${isOpen ? 'bg-luxury-gold text-luxury-black' : 'bg-white/5 text-luxury-gold'}`}>
+                        <HelpCircle size={24} />
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            );
-          })}
+                      <span className={`text-xl font-black transition-colors duration-500 ${isOpen ? 'text-white' : 'text-white/70 group-hover:text-white'}`}>
+                        {faq.q}
+                      </span>
+                    </div>
+                    <div className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-500 ${isOpen ? 'border-luxury-gold text-luxury-gold rotate-180' : 'border-white/10 text-white/40'}`}>
+                      {isOpen ? <Minus size={20} /> : <Plus size={20} />}
+                    </div>
+                  </button>
+                  
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        key="content"
+                        initial="collapsed"
+                        animate="open"
+                        exit="collapsed"
+                        variants={{
+                          open: { opacity: 1, height: "auto" },
+                          collapsed: { opacity: 0, height: 0 }
+                        }}
+                        transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
+                      >
+                        <div className="px-8 pb-8 pl-[5.5rem] text-white/50 text-lg leading-relaxed">
+                          <div className="w-full h-px bg-white/5 mb-6" />
+                          {faq.a}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              );
+            })
+          ) : (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-20 bg-white/[0.01] rounded-[2rem] border border-dashed border-white/5"
+            >
+              <div className="text-luxury-gold/20 mb-4 flex justify-center">
+                <Search size={48} />
+              </div>
+              <p className="text-white/30 font-bold uppercase tracking-widest">{t('faq.noResults') || "Không tìm thấy kết quả phù hợp"}</p>
+            </motion.div>
+          )}
         </div>
       </div>
     </section>
   );
-};
+});
 
 interface SocialProofProps {
   config?: {
@@ -1938,7 +2061,7 @@ const SocialProof = ({ config = { showSignups: true, showPurchases: true } }: So
         >
           <div className="relative">
             <div className="w-12 h-12 bg-gradient-to-br from-luxury-gold to-luxury-gold-light rounded-2xl flex items-center justify-center text-luxury-black shrink-0 shadow-lg">
-              <CheckCircle2 size={24} />
+              <CheckCircle size={24} />
             </div>
             <div className="absolute -top-1 -right-1 w-3 h-3 bg-luxury-green rounded-full border-2 border-luxury-black animate-pulse" />
           </div>
@@ -2083,7 +2206,7 @@ const Footer = () => {
                 <span className="text-[10px] font-bold uppercase tracking-widest">SSL Secured</span>
               </div>
               <div className="px-4 py-2 bg-white/5 rounded-lg border border-white/10 flex items-center gap-2 grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all cursor-default">
-                <CheckCircle2 size={16} className="text-luxury-gold" />
+                <CheckCircle size={16} className="text-luxury-gold" />
                 <span className="text-[10px] font-bold uppercase tracking-widest">DMCA Protected</span>
               </div>
             </div>
@@ -2190,6 +2313,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [lang, setLang] = useState<Language>('vi');
   const [theme, setTheme] = useState<Theme>('dark');
+  const [customTestimonials, setCustomTestimonials] = useState<Testimonial[]>([]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -2221,6 +2345,8 @@ export default function App() {
     return result;
   };
 
+  const allTestimonials = [...(t('testimonials.list') || []), ...customTestimonials];
+
   return (
     <LanguageContext.Provider value={{ lang, setLang, t }}>
       <ThemeContext.Provider value={{ theme, toggleTheme }}>
@@ -2249,7 +2375,8 @@ export default function App() {
             <KeySellingPointsBento />
             <PricingSection />
             <BlogSection />
-            <Testimonials />
+            <Testimonials list={allTestimonials} />
+            <SubmitTestimonial onAdd={(t) => setCustomTestimonials(prev => [...prev, t])} />
             <FAQSection />
             <Newsletter />
             <PaymentSection />

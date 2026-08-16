@@ -1,5 +1,8 @@
 {
   "name": "Sky Luxury Media - Landing Page",
   "description": "Landing page chuyên nghiệp cho dịch vụ truyền thông MMO Sky Luxury Media với phong cách Dark Luxury.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

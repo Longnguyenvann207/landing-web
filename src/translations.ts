@@ -182,19 +182,31 @@ export const translations = {
         {
           name: "Trần Minh Tâm",
           role: "Kinh doanh Online",
-          content: "Dịch vụ unlock tài khoản cực nhanh. Mình bị khóa FB Ads mà team xử lý chỉ trong 15 phút. Rất chuyên nghiệp!"
+          content: "Dịch vụ unlock tài khoản cực nhanh. Mình bị khóa FB Ads mà team xử lý chỉ trong 15 phút. Rất chuyên nghiệp!",
+          rating: 5
         },
         {
           name: "Lê Hoàng Nam",
           role: "TikToker",
-          content: "Kênh TikTok của mình tăng trưởng vượt bậc sau khi sử dụng dịch vụ seeding và tư vấn của Sky Luxury Media. Cảm ơn team!"
+          content: "Kênh TikTok của mình tăng trưởng vượt bậc sau khi sử dụng dịch vụ seeding và tư vấn của Sky Luxury Media. Cảm ơn team!",
+          rating: 5
         },
         {
           name: "Nguyễn Thùy Chi",
           role: "Chủ Shop Thời Trang",
-          content: "Bảo mật thông tin tuyệt đối là điều mình thích nhất ở đây. Tool MMO chạy rất mượt, giúp mình tiết kiệm nhiều thời gian."
+          content: "Bảo mật thông tin tuyệt đối là điều mình thích nhất ở đây. Tool MMO chạy rất mượt, giúp mình tiết kiệm nhiều thời gian.",
+          rating: 5
         }
-      ]
+      ],
+      submitTitle: "GỬI ĐÁNH GIÁ CỦA BẠN",
+      submitDesc: "Chia sẻ trải nghiệm của bạn với Sky Luxury Media",
+      formName: "Họ và tên",
+      formRole: "Nghề nghiệp / Công ty",
+      formContent: "Nội dung đánh giá",
+      formRating: "Xếp hạng",
+      formBtnSubmit: "GỬI ĐÁNH GIÁ",
+      formSuccess: "Cảm ơn bạn đã gửi đánh giá!",
+      errorEmpty: "Vui lòng điền đầy đủ thông tin",
     },
     process: {
       title: "QUY TRÌNH LÀM VIỆC",
@@ -456,19 +468,31 @@ export const translations = {
         {
           name: "Tran Minh Tam",
           role: "Online Business",
-          content: "Ultra-fast account unlock service. My FB Ads account was locked and the team fixed it in 15 minutes. Very professional!"
+          content: "Ultra-fast account unlock service. My FB Ads account was locked and the team fixed it in 15 minutes. Very professional!",
+          rating: 5
         },
         {
           name: "Le Hoang Nam",
           role: "TikToker",
-          content: "My TikTok channel grew significantly after using Sky Luxury Media's seeding and consulting services. Thanks team!"
+          content: "My TikTok channel grew significantly after using Sky Luxury Media's seeding and consulting services. Thanks team!",
+          rating: 5
         },
         {
           name: "Nguyen Thuy Chi",
           role: "Fashion Shop Owner",
-          content: "Absolute information security is what I like most here. MMO tools run very smoothly, helping me save a lot of time."
+          content: "Absolute information security is what I like most here. MMO tools run very smoothly, helping me save a lot of time.",
+          rating: 5
         }
-      ]
+      ],
+      submitTitle: "SUBMIT YOUR REVIEW",
+      submitDesc: "Share your experience with Sky Luxury Media",
+      formName: "Full Name",
+      formRole: "Profession / Company",
+      formContent: "Review Content",
+      formRating: "Rating",
+      formBtnSubmit: "SUBMIT REVIEW",
+      formSuccess: "Thank you for your review!",
+      errorEmpty: "Please fill in all information",
     },
     process: {
       title: "WORKING PROCESS",
