@@ -48,10 +48,19 @@ import {
   Linkedin,
   Twitter,
   Cpu,
-  Rocket
+  Rocket,
+  Copy,
+  Check,
+  Gift,
+  Share2,
+  Sparkles
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { translations } from './translations';
+import { OrderTracker } from './components/OrderTracker';
+import { PricingCalculator } from './components/PricingCalculator';
+import { AccountDiagnostic } from './components/AccountDiagnostic';
+import { LuckyWheelModal } from './components/LuckyWheelModal';
 
 // --- Types ---
 type Language = 'vi' | 'en';
@@ -92,7 +101,93 @@ const useTranslation = () => {
   return context;
 };
 
-// --- Constants ---
+// --- Components ---
+
+const ReferralModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+  const { t } = useTranslation();
+  const [copied, setCopied] = useState(false);
+  const referralLink = window.location.origin;
+  const message = `${t('referral.message')}${referralLink}`;
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(message);
+    setCopied(true);
+    confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#D4AF37', '#000000', '#FFFFFF']
+    });
+    setTimeout(() => {
+      setCopied(false);
+      onClose();
+    }, 2000);
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="relative w-full max-w-lg bg-glass border border-white/10 rounded-[2.5rem] p-8 md:p-12 overflow-hidden"
+          >
+            <div className="absolute -top-12 -right-12 w-48 h-48 bg-luxury-gold/10 rounded-full blur-3xl" />
+            <button
+              onClick={onClose}
+              className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors"
+            >
+              <X size={24} />
+            </button>
+
+            <div className="text-center space-y-6 relative z-10">
+              <div className="w-20 h-20 bg-luxury-gold/20 rounded-2xl flex items-center justify-center mx-auto mb-6 text-luxury-gold">
+                <Gift size={40} />
+              </div>
+
+              <h2 className="text-3xl font-black uppercase tracking-tight">{t('referral.title')}</h2>
+              <p className="text-white/60">{t('referral.desc')}</p>
+
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-left relative group">
+                <p className="text-sm text-white/80 italic leading-relaxed">
+                  "{message}"
+                </p>
+                <div className="absolute inset-0 bg-luxury-gold/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+              </div>
+
+              <button
+                onClick={handleShare}
+                disabled={copied}
+                className="w-full bg-luxury-gold text-luxury-black font-black py-5 rounded-2xl shadow-[0_10px_30px_rgba(212,175,55,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 uppercase tracking-widest disabled:opacity-50 disabled:scale-100"
+              >
+                {copied ? (
+                  <>
+                    <Check size={20} />
+                    {t('referral.success')}
+                  </>
+                ) : (
+                  <>
+                    <Share2 size={20} />
+                    {t('referral.btnShare')}
+                  </>
+                )}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+};
 const ZALO_LINK = 'https://zalo.me/0334063029';
 const PHONE_NUMBER = '0334063029';
 
@@ -299,12 +394,19 @@ const MockTool = () => {
   const [inputValue, setInputValue] = useState('');
   const [isChecking, setIsChecking] = useState(false);
   const [result, setResult] = useState<null | 'success' | 'warning'>(null);
+  const [isError, setIsError] = useState(false);
+  const [copied, setCopied] = useState(false);
   const { t } = useTranslation();
 
   const handleCheck = () => {
-    if (!inputValue) return;
+    if (!inputValue) {
+      setIsError(true);
+      setTimeout(() => setIsError(false), 500);
+      return;
+    }
     setIsChecking(true);
     setResult(null);
+    setIsError(false);
     
     setTimeout(() => {
       setIsChecking(false);
@@ -320,6 +422,13 @@ const MockTool = () => {
         });
       }
     }, 3000);
+  };
+
+  const copyResult = () => {
+    const text = `${t('mockTool.successTitle')}: ${t('mockTool.successDesc')}`;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -345,8 +454,11 @@ const MockTool = () => {
                 placeholder={t('mockTool.placeholder')}
                 aria-label="Enter account link or ID"
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                className="flex-grow bg-white/5 border border-white/10 rounded-2xl py-4 px-6 focus:border-luxury-neon outline-none transition-all"
+                onChange={(e) => {
+                  setInputValue(e.target.value);
+                  if (e.target.value) setIsError(false);
+                }}
+                className={`flex-grow bg-white/5 border rounded-2xl py-4 px-6 focus:border-luxury-neon outline-none transition-all ${isError ? 'border-red-500 animate-[pulse_0.5s_ease-in-out_infinite]' : 'border-white/10'}`}
               />
               <button 
                 onClick={handleCheck}
@@ -374,13 +486,22 @@ const MockTool = () => {
                 <motion.div 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mt-8 p-6 bg-luxury-green/10 border border-luxury-green/20 rounded-2xl flex items-center gap-4"
+                  className="mt-8 p-6 bg-luxury-green/10 border border-luxury-green/20 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                 >
-                  <CheckCircle className="text-luxury-green" size={28} />
-                  <div>
-                    <h4 className="text-luxury-green font-black">{t('mockTool.successTitle')}</h4>
-                    <p className="text-white/50 text-sm">{t('mockTool.successDesc')}</p>
+                  <div className="flex items-center gap-4">
+                    <CheckCircle className="text-luxury-green" size={28} />
+                    <div>
+                      <h4 className="text-luxury-green font-black">{t('mockTool.successTitle')}</h4>
+                      <p className="text-white/50 text-sm">{t('mockTool.successDesc')}</p>
+                    </div>
                   </div>
+                  <button
+                    onClick={copyResult}
+                    className="flex items-center gap-2 px-4 py-2 bg-luxury-green/20 text-luxury-green rounded-xl hover:bg-luxury-green/30 transition-all text-sm font-bold self-start sm:self-center"
+                  >
+                    {copied ? <Check size={16} /> : <Copy size={16} />}
+                    {copied ? t('mockTool.btnCopied') : t('mockTool.btnCopy')}
+                  </button>
                 </motion.div>
               )}
 
@@ -531,7 +652,7 @@ const ReadingProgressBar = () => {
   );
 };
 
-const Navbar = () => {
+const Navbar = ({ onOpenLuckyWheel }: { onOpenLuckyWheel?: () => void }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { lang, setLang, t } = useTranslation();
@@ -547,6 +668,9 @@ const Navbar = () => {
 
   const navLinks = [
     { name: t('nav.home'), href: '#home' },
+    { name: t('nav.diagnostic'), href: '#diagnostic' },
+    { name: t('nav.pricingCalc'), href: '#pricing-calculator' },
+    { name: t('nav.tracking'), href: '#tracking' },
     { name: t('nav.services'), href: '#services' },
     { name: t('nav.contact'), href: '#contact' },
   ];
@@ -564,33 +688,43 @@ const Navbar = () => {
         </a>
 
         {/* Desktop Nav */}
-        <div className="hidden lg:flex items-center gap-10">
-          <div className="flex items-center gap-8">
+        <div className="hidden lg:flex items-center gap-6 xl:gap-8">
+          <div className="flex items-center gap-5 xl:gap-6">
             {navLinks.map((link) => (
               <a 
                 key={link.name} 
                 href={link.href} 
-                className="text-sm font-bold uppercase tracking-widest hover:text-luxury-gold transition-colors"
+                className="text-xs xl:text-sm font-bold uppercase tracking-wider hover:text-luxury-gold transition-colors whitespace-nowrap"
               >
                 {link.name}
               </a>
             ))}
+            {onOpenLuckyWheel && (
+              <button
+                type="button"
+                onClick={onOpenLuckyWheel}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-luxury-gold/15 hover:bg-luxury-gold hover:text-luxury-black border border-luxury-gold/40 rounded-xl text-xs font-black uppercase tracking-wider text-luxury-gold transition-all shadow-[0_0_15px_rgba(212,175,55,0.2)]"
+              >
+                <Sparkles size={14} className="animate-spin" />
+                <span>{t('nav.luckyWheel')}</span>
+              </button>
+            )}
           </div>
 
-          <div className="flex items-center gap-4 border-l border-white/10 pl-10">
+          <div className="flex items-center gap-3 border-l border-white/10 pl-6">
             {/* Language Switcher */}
             <div className="flex bg-white/5 p-1 rounded-xl border border-white/5">
               <button 
                 onClick={() => setLang('vi')}
                 aria-label="Switch language to Vietnamese"
-                className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${lang === 'vi' ? 'bg-luxury-gold text-luxury-black shadow-lg' : 'text-white/40 hover:text-white'}`}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${lang === 'vi' ? 'bg-luxury-gold text-luxury-black shadow-lg' : 'text-white/40 hover:text-white'}`}
               >
                 VN
               </button>
               <button 
                 onClick={() => setLang('en')}
                 aria-label="Switch language to English"
-                className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${lang === 'en' ? 'bg-luxury-gold text-luxury-black shadow-lg' : 'text-white/40 hover:text-white'}`}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${lang === 'en' ? 'bg-luxury-gold text-luxury-black shadow-lg' : 'text-white/40 hover:text-white'}`}
               >
                 EN
               </button>
@@ -602,28 +736,12 @@ const Navbar = () => {
               aria-label="Toggle theme"
               className="p-2 bg-white/5 rounded-xl border border-white/5 text-luxury-gold hover:scale-110 transition-all"
             >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-
-            {/* Social Icons (Desktop) */}
-            <div className="hidden xl:flex items-center gap-3 border-l border-white/10 pl-4">
-              {SOCIAL_LINKS.map((social) => (
-                <a 
-                  key={social.name}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`Visit our ${social.name} page`}
-                  className="text-white/40 hover:text-luxury-gold transition-all hover:scale-110"
-                >
-                  <social.Icon size={20} />
-                </a>
-              ))}
-            </div>
 
             <a 
               href="#contact" 
-              className="px-6 py-3 bg-luxury-gold text-luxury-black font-black text-xs rounded-xl uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-luxury-gold/20"
+              className="px-5 py-2.5 bg-luxury-gold text-luxury-black font-black text-xs rounded-xl uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-luxury-gold/20 whitespace-nowrap"
             >
               {t('nav.support')}
             </a>
@@ -650,18 +768,33 @@ const Navbar = () => {
             exit={{ opacity: 0, height: 0 }}
             className="lg:hidden bg-luxury-black border-b border-white/5 overflow-hidden"
           >
-            <div className="px-4 py-8 space-y-6">
+            <div className="px-4 py-8 space-y-4">
               {navLinks.map((link) => (
                 <a 
                   key={link.name} 
                   href={link.href} 
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block text-xl font-black uppercase tracking-widest text-center"
+                  className="block text-lg font-black uppercase tracking-widest text-center hover:text-luxury-gold transition-colors py-1"
                 >
                   {link.name}
                 </a>
               ))}
-              <div className="flex justify-center gap-4 pt-4">
+
+              {onOpenLuckyWheel && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onOpenLuckyWheel();
+                  }}
+                  className="w-full py-4 bg-luxury-gold/20 border border-luxury-gold/50 text-luxury-gold font-black rounded-xl text-xs uppercase tracking-widest flex items-center justify-center gap-2"
+                >
+                  <Sparkles size={16} />
+                  <span>{t('nav.luckyWheel')}</span>
+                </button>
+              )}
+
+              <div className="flex justify-center gap-4 pt-4 border-t border-white/10">
                 <button onClick={() => setLang('vi')} className={`px-4 py-2 rounded-xl font-black ${lang === 'vi' ? 'bg-luxury-gold text-luxury-black' : 'bg-white/5'}`}>VN</button>
                 <button onClick={() => setLang('en')} className={`px-4 py-2 rounded-xl font-black ${lang === 'en' ? 'bg-luxury-gold text-luxury-black' : 'bg-white/5'}`}>EN</button>
                 <button onClick={toggleTheme} className="p-3 bg-white/5 rounded-xl text-luxury-gold">
@@ -670,7 +803,7 @@ const Navbar = () => {
               </div>
 
               {/* Social Icons (Mobile) */}
-              <div className="flex justify-center gap-6 pt-4">
+              <div className="flex justify-center gap-6 pt-2">
                 {SOCIAL_LINKS.map((social) => (
                   <a 
                     key={social.name}
@@ -679,7 +812,7 @@ const Navbar = () => {
                     rel="noopener noreferrer"
                     className="text-white/40 hover:text-luxury-gold transition-all"
                   >
-                    <social.Icon size={28} />
+                    <social.Icon size={24} />
                   </a>
                 ))}
               </div>
@@ -687,7 +820,7 @@ const Navbar = () => {
               <a 
                 href="#contact" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="block w-full py-5 bg-luxury-gold text-luxury-black font-black text-center rounded-2xl uppercase tracking-widest"
+                className="block w-full py-4 bg-luxury-gold text-luxury-black font-black text-center rounded-2xl uppercase tracking-widest"
               >
                 {t('nav.support')}
               </a>
@@ -2314,6 +2447,9 @@ export default function App() {
   const [lang, setLang] = useState<Language>('vi');
   const [theme, setTheme] = useState<Theme>('dark');
   const [customTestimonials, setCustomTestimonials] = useState<Testimonial[]>([]);
+  const [isReferralOpen, setIsReferralOpen] = useState(false);
+  const [isLuckyWheelOpen, setIsLuckyWheelOpen] = useState(false);
+  const [activeCoupon, setActiveCoupon] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -2360,10 +2496,20 @@ export default function App() {
           <ScrollProgress />
           <CustomCursor />
           <BackgroundParticles />
-          <Navbar />
+          <Navbar onOpenLuckyWheel={() => setIsLuckyWheelOpen(true)} />
           <main>
             <Hero />
             <ExploreServicesCTA />
+            
+            {/* Feature 3: Bác sĩ tài khoản AI - Chẩn đoán lỗi tự động */}
+            <AccountDiagnostic t={t} zaloLink={ZALO_LINK} />
+
+            {/* Feature 2: Bộ tính giá tự động & Dự toán ngân sách */}
+            <PricingCalculator t={t} zaloLink={ZALO_LINK} externalCoupon={activeCoupon} />
+
+            {/* Feature 1: Tra cứu tiến độ đơn hàng / Case Unlock */}
+            <OrderTracker t={t} zaloLink={ZALO_LINK} />
+
             <TrustSection />
             <StatsSection />
             <MockTool />
@@ -2383,6 +2529,52 @@ export default function App() {
             <ContactForm />
           </main>
           <Footer />
+
+          {/* Floating Action Buttons */}
+          <div className="fixed bottom-8 left-8 z-[90] flex flex-col gap-3">
+            {/* Feature 5: Floating Lucky Wheel Trigger */}
+            <motion.button
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setIsLuckyWheelOpen(true)}
+              className="w-14 h-14 bg-gradient-to-br from-luxury-gold via-luxury-gold-light to-luxury-gold text-luxury-black rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(212,175,55,0.4)] group overflow-hidden border border-white/20 relative"
+              title={t('luckyWheel.floatingBtn')}
+            >
+              <div className="absolute inset-0 bg-white/30 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+              <Sparkles size={24} className="relative z-10 animate-spin" />
+              <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-luxury-neon opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-luxury-neon"></span>
+              </span>
+            </motion.button>
+
+            {/* Referral Trigger */}
+            <motion.button
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setIsReferralOpen(true)}
+              className="w-14 h-14 bg-luxury-gold text-luxury-black rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(212,175,55,0.3)] group overflow-hidden"
+              title={t('referral.title')}
+            >
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+              <Gift size={24} className="relative z-10" />
+            </motion.button>
+          </div>
+
+          <ReferralModal isOpen={isReferralOpen} onClose={() => setIsReferralOpen(false)} />
+          
+          {/* Feature 5: Royal Lucky Spin Modal */}
+          <LuckyWheelModal 
+            isOpen={isLuckyWheelOpen} 
+            onClose={() => setIsLuckyWheelOpen(false)} 
+            onApplyCoupon={(code) => setActiveCoupon(code)}
+            t={t}
+          />
+
           <ZaloButton />
           <AIChatAssistant />
           <HumanSupportChat />
