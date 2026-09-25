@@ -69,6 +69,7 @@ import { VipLoyalty } from './components/VipLoyalty';
 import { MmoUtilities } from './components/MmoUtilities';
 import { FloatingActionDock } from './components/FloatingActionDock';
 import { AdminOrderModal } from './components/AdminOrderModal';
+import { AdminPage } from './components/AdminPage';
 import { OrderSuccessModal } from './components/OrderSuccessModal';
 import { createCustomerOrder } from './services/orderStore';
 
@@ -664,12 +665,10 @@ const ReadingProgressBar = () => {
 
 const Navbar = ({ 
   onOpenLuckyWheel, 
-  onOpenVietQr,
-  onOpenAdmin
+  onOpenVietQr
 }: { 
   onOpenLuckyWheel?: () => void; 
   onOpenVietQr?: () => void; 
-  onOpenAdmin?: () => void;
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -741,18 +740,6 @@ const Navbar = ({
               >
                 <QrCode size={14} />
                 <span>VietQR</span>
-              </button>
-            )}
-
-            {onOpenAdmin && (
-              <button
-                type="button"
-                onClick={onOpenAdmin}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-luxury-gold/20 hover:bg-luxury-gold hover:text-luxury-black border border-luxury-gold/60 rounded-xl text-xs font-black uppercase tracking-wider text-luxury-gold transition-all shadow-[0_0_15px_rgba(212,175,55,0.25)]"
-                title="Bảng Quản trị & Điều chỉnh tiến độ đơn hàng"
-              >
-                <Sliders size={14} />
-                <span>Admin Đơn</span>
               </button>
             )}
 
@@ -849,20 +836,6 @@ const Navbar = ({
                 >
                   <QrCode size={16} />
                   <span>Quét mã VietQR 24/7</span>
-                </button>
-              )}
-
-              {onOpenAdmin && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    onOpenAdmin();
-                  }}
-                  className="w-full py-3.5 bg-luxury-gold/20 border border-luxury-gold/60 text-luxury-gold font-black rounded-xl text-xs uppercase tracking-widest flex items-center justify-center gap-2"
-                >
-                  <Sliders size={16} />
-                  <span>Quản trị tiến độ đơn (Admin)</span>
                 </button>
               )}
 
@@ -2415,8 +2388,25 @@ const Newsletter = () => {
   );
 };
 
-const Footer = () => {
+const Footer = ({ onSecretAdminTrigger }: { onSecretAdminTrigger?: () => void }) => {
   const { t } = useTranslation();
+  const [clickCount, setClickCount] = useState(0);
+
+  const handleSecretClick = () => {
+    const next = clickCount + 1;
+    if (next >= 5) {
+      if (onSecretAdminTrigger) {
+        onSecretAdminTrigger();
+      } else {
+        window.location.hash = '#admin';
+      }
+      setClickCount(0);
+      return;
+    }
+    setClickCount(next);
+    setTimeout(() => setClickCount(0), 3000);
+  };
+
   return (
     <footer className="bg-luxury-black pt-24 pb-12 border-t border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -2445,6 +2435,7 @@ const Footer = () => {
             <h3 className="text-luxury-gold font-black mb-6 uppercase tracking-widest text-sm">{t('footer.quickLinks')}</h3>
             <ul className="space-y-4 text-white/50">
               <li><a href="#" className="hover:text-luxury-gold transition-colors">{t('nav.home')}</a></li>
+              <li><a href="#tracking" className="hover:text-luxury-gold transition-colors">{t('nav.tracking')}</a></li>
               <li><a href="#services" className="hover:text-luxury-gold transition-colors">{t('nav.services')}</a></li>
               <li><a href="#pricing" className="hover:text-luxury-gold transition-colors">{t('footer.pricing')}</a></li>
               <li><a href="#contact" className="hover:text-luxury-gold transition-colors">{t('nav.contact')}</a></li>
@@ -2471,12 +2462,18 @@ const Footer = () => {
         </div>
         
         <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-white/30 text-sm">
-          <p>© 2024 SKY LUXURY MEDIA. {t('footer.copyright')}</p>
+          <p 
+            onClick={handleSecretClick} 
+            className="cursor-default select-none transition-colors hover:text-white/40"
+            title=""
+          >
+            © 2024 SKY LUXURY MEDIA. {t('footer.copyright')}
+          </p>
           
           <div className="flex items-center gap-6">
             {SOCIAL_LINKS.map((social) => (
               <a 
-                key={social.name}
+                key={social.name} 
                 href={social.href}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -2551,10 +2548,34 @@ export default function App() {
   
   // Admin & Order Tracking Management States
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isAdminPageActive, setIsAdminPageActive] = useState(false);
   const [adminTargetOrderId, setAdminTargetOrderId] = useState<string | undefined>(undefined);
   const [isOrderSuccessOpen, setIsOrderSuccessOpen] = useState(false);
   const [lastCreatedOrder, setLastCreatedOrder] = useState<{ id: string; service: string; amount?: number; phone?: string } | null>(null);
   const [trackerSearchCode, setTrackerSearchCode] = useState<string | undefined>(undefined);
+
+  const openAdminPage = (orderId?: string) => {
+    setAdminTargetOrderId(orderId);
+    window.location.hash = '#admin';
+    setIsAdminPageActive(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const closeAdminPage = () => {
+    if (window.location.pathname.toLowerCase().includes('admin')) {
+      try {
+        window.history.pushState(null, '', '/');
+      } catch {}
+    }
+    if (window.location.search.toLowerCase().includes('admin')) {
+      try {
+        window.history.pushState(null, '', window.location.pathname);
+      } catch {}
+    }
+    window.location.hash = '#home';
+    setIsAdminPageActive(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleTrackOrder = (code: string) => {
     setTrackerSearchCode(code);
@@ -2565,6 +2586,53 @@ export default function App() {
       }
     }, 100);
   };
+
+  // URL Detection for Direct Admin Access (e.g. #admin, /#/admin, /admin, ?admin=true) & Keyboard shortcut
+  useEffect(() => {
+    const checkAdminAccess = () => {
+      const hash = window.location.hash.toLowerCase();
+      const path = window.location.pathname.toLowerCase();
+      const search = window.location.search.toLowerCase();
+      const isAdminRoute = 
+        hash === '#admin' || 
+        hash === '#/admin' || 
+        hash.startsWith('#admin') || 
+        hash.startsWith('#/admin') || 
+        path === '/admin' || 
+        path === '/admin/' || 
+        path.startsWith('/admin') ||
+        search.includes('admin');
+
+      if (isAdminRoute) {
+        setIsAdminPageActive(true);
+      } else {
+        setIsAdminPageActive(false);
+      }
+    };
+
+    checkAdminAccess();
+    window.addEventListener('hashchange', checkAdminAccess);
+    window.addEventListener('popstate', checkAdminAccess);
+
+    // Secret shortcut for Admin: Ctrl + Shift + A (or Cmd + Shift + A)
+    const handleKeyShortcut = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'a' || e.key === 'A')) {
+        e.preventDefault();
+        if (window.location.hash.includes('admin')) {
+          closeAdminPage();
+        } else {
+          openAdminPage();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyShortcut);
+
+    return () => {
+      window.removeEventListener('hashchange', checkAdminAccess);
+      window.removeEventListener('popstate', checkAdminAccess);
+      window.removeEventListener('keydown', handleKeyShortcut);
+    };
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -2605,100 +2673,110 @@ export default function App() {
           <AnimatePresence>
             {loading && <Preloader />}
           </AnimatePresence>
-          
-          <ReadingProgressBar />
-          <TopBanner />
-          <ScrollProgress />
-          <CustomCursor />
-          <BackgroundParticles />
-          <Navbar 
-            onOpenLuckyWheel={() => setIsLuckyWheelOpen(true)} 
-            onOpenVietQr={() => {
-              setVietQrOrderData({ caseId: `SKY-${Math.floor(1000 + Math.random() * 9000)}`, amount: 500000 });
-              setIsVietQrOpen(true);
-            }}
-            onOpenAdmin={() => {
-              setAdminTargetOrderId(undefined);
-              setIsAdminOpen(true);
-            }}
-          />
-          <main>
-            <Hero />
-            <ExploreServicesCTA />
-            
-            {/* Feature 1: Thư viện bằng chứng thành công Trước/Sau */}
-            <ProofOfWork t={t} zaloLink={ZALO_LINK} />
 
-            {/* Bác sĩ tài khoản AI - Chẩn đoán lỗi tự động */}
-            <AccountDiagnostic t={t} zaloLink={ZALO_LINK} />
-
-            {/* Bộ tính giá tự động & Dự toán ngân sách */}
-            <PricingCalculator 
-              t={t} 
-              zaloLink={ZALO_LINK} 
-              externalCoupon={activeCoupon} 
-              onOpenVietQr={(order) => {
-                setVietQrOrderData(order);
-                setIsVietQrOpen(true);
+          {isAdminPageActive ? (
+            /* TRANG QUẢN TRỊ ADMIN (TRUY CẬP TRỰC TIẾP QUA URL #admin) */
+            <AdminPage
+              onBackToHome={closeAdminPage}
+              onJumpToTracker={(code) => {
+                closeAdminPage();
+                handleTrackOrder(code);
               }}
-              onOrderPlaced={(order) => {
-                setLastCreatedOrder(order);
-                setIsOrderSuccessOpen(true);
-              }}
+              initialOrderId={adminTargetOrderId}
             />
+          ) : (
+            /* GIAO DIỆN KHÁCH HÀNG (HOÀN TOÀN KHÔNG HIỂN THỊ NÚT ADMIN) */
+            <>
+              <ReadingProgressBar />
+              <TopBanner />
+              <ScrollProgress />
+              <CustomCursor />
+              <BackgroundParticles />
+              <Navbar 
+                onOpenLuckyWheel={() => setIsLuckyWheelOpen(true)} 
+                onOpenVietQr={() => {
+                  setVietQrOrderData({ caseId: `SKY-${Math.floor(1000 + Math.random() * 9000)}`, amount: 500000 });
+                  setIsVietQrOpen(true);
+                }}
+              />
+              <main>
+                <Hero />
+                <ExploreServicesCTA />
+                
+                {/* Feature 1: Thư viện bằng chứng thành công Trước/Sau */}
+                <ProofOfWork t={t} zaloLink={ZALO_LINK} />
 
-            {/* Tra cứu tiến độ đơn hàng / Case Unlock */}
-            <OrderTracker 
-              t={t} 
-              zaloLink={ZALO_LINK} 
-              externalSearchCode={trackerSearchCode}
-              onOpenAdminEdit={(orderId) => {
-                setAdminTargetOrderId(orderId);
-                setIsAdminOpen(true);
-              }}
-            />
+                {/* Bác sĩ tài khoản AI - Chẩn đoán lỗi tự động */}
+                <AccountDiagnostic t={t} zaloLink={ZALO_LINK} />
 
-            {/* Feature 4: Trung tâm công cụ tiện ích MMO miễn phí */}
-            <MmoUtilities t={t} />
+                {/* Bộ tính giá tự động & Dự toán ngân sách */}
+                <PricingCalculator 
+                  t={t} 
+                  zaloLink={ZALO_LINK} 
+                  externalCoupon={activeCoupon} 
+                  onOpenVietQr={(order) => {
+                    setVietQrOrderData(order);
+                    setIsVietQrOpen(true);
+                  }}
+                  onOrderPlaced={(order) => {
+                    setLastCreatedOrder(order);
+                    setIsOrderSuccessOpen(true);
+                  }}
+                />
 
-            {/* Feature 3: Bảng điều khiển VIP & Chính sách đại lý */}
-            <VipLoyalty t={t} zaloLink={ZALO_LINK} />
+                {/* Tra cứu tiến độ đơn hàng / Case Unlock */}
+                <OrderTracker 
+                  t={t} 
+                  zaloLink={ZALO_LINK} 
+                  externalSearchCode={trackerSearchCode}
+                  onOpenAdminEdit={(orderId) => {
+                    openAdminPage(orderId);
+                  }}
+                />
 
-            <TrustSection />
-            <StatsSection />
-            <MockTool />
-            <QuickService />
-            <BentoGrid />
-            <CaseStudiesSection />
-            <ProcessSection />
-            <Services />
-            <KeySellingPointsBento />
-            <PricingSection />
-            <BlogSection />
-            <Testimonials list={allTestimonials} />
-            <SubmitTestimonial onAdd={(t) => setCustomTestimonials(prev => [...prev, t])} />
-            <FAQSection />
-            <Newsletter />
-            <PaymentSection />
-            <ContactForm 
-              onOrderCreated={(order) => {
-                setLastCreatedOrder(order);
-                setIsOrderSuccessOpen(true);
-              }}
-            />
-          </main>
-          <Footer />
+                {/* Feature 4: Trung tâm công cụ tiện ích MMO miễn phí */}
+                <MmoUtilities t={t} />
 
-          {/* Floating Action Dock (Auto-shrink on scroll & Collapsible) */}
-          <FloatingActionDock 
-            onOpenVietQr={() => {
-              setVietQrOrderData({ caseId: `SKY-${Math.floor(1000 + Math.random() * 9000)}`, amount: 500000 });
-              setIsVietQrOpen(true);
-            }}
-            onOpenLuckyWheel={() => setIsLuckyWheelOpen(true)}
-            onOpenReferral={() => setIsReferralOpen(true)}
-            t={t}
-          />
+                {/* Feature 3: Bảng điều khiển VIP & Chính sách đại lý */}
+                <VipLoyalty t={t} zaloLink={ZALO_LINK} />
+
+                <TrustSection />
+                <StatsSection />
+                <MockTool />
+                <QuickService />
+                <BentoGrid />
+                <CaseStudiesSection />
+                <ProcessSection />
+                <Services />
+                <KeySellingPointsBento />
+                <PricingSection />
+                <BlogSection />
+                <Testimonials list={allTestimonials} />
+                <SubmitTestimonial onAdd={(t) => setCustomTestimonials(prev => [...prev, t])} />
+                <FAQSection />
+                <Newsletter />
+                <PaymentSection />
+                <ContactForm 
+                  onOrderCreated={(order) => {
+                    setLastCreatedOrder(order);
+                    setIsOrderSuccessOpen(true);
+                  }}
+                />
+              </main>
+              <Footer onSecretAdminTrigger={openAdminPage} />
+
+              {/* Floating Action Dock (Auto-shrink on scroll & Collapsible) */}
+              <FloatingActionDock 
+                onOpenVietQr={() => {
+                  setVietQrOrderData({ caseId: `SKY-${Math.floor(1000 + Math.random() * 9000)}`, amount: 500000 });
+                  setIsVietQrOpen(true);
+                }}
+                onOpenLuckyWheel={() => setIsLuckyWheelOpen(true)}
+                onOpenReferral={() => setIsReferralOpen(true)}
+                t={t}
+              />
+            </>
+          )}
 
           <ReferralModal isOpen={isReferralOpen} onClose={() => setIsReferralOpen(false)} />
           

@@ -184,19 +184,6 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
 
         {/* Search input card */}
         <div className="bg-glass p-6 md:p-8 rounded-[2.5rem] border border-white/10 shadow-2xl mb-8 relative">
-          {/* Admin shortcut button */}
-          {onOpenAdminEdit && (
-            <button
-              type="button"
-              onClick={() => onOpenAdminEdit(searchedCase?.id || '')}
-              className="absolute top-6 right-6 hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-luxury-gold/10 hover:bg-luxury-gold hover:text-luxury-black border border-luxury-gold/30 text-luxury-gold text-xs font-bold transition-all"
-              title="Mở Bảng Admin để chỉnh sửa tiến độ đơn này"
-            >
-              <Sliders size={14} />
-              <span>Admin chỉnh sửa tiến độ</span>
-            </button>
-          )}
-
           <form 
             onSubmit={(e) => {
               e.preventDefault();
@@ -324,16 +311,6 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({
                     <span className="block text-white/30 uppercase tracking-widest">{t('orderTracker.customer')}</span>
                     <span className="font-bold text-white text-sm">{searchedCase.customerName}</span>
                   </div>
-                  {onOpenAdminEdit && (
-                    <button
-                      type="button"
-                      onClick={() => onOpenAdminEdit(searchedCase.id)}
-                      className="px-3 py-1.5 rounded-xl bg-luxury-gold/20 text-luxury-gold hover:bg-luxury-gold hover:text-luxury-black text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1 border border-luxury-gold/40"
-                    >
-                      <Sliders size={12} />
-                      <span>Admin chỉnh sửa</span>
-                    </button>
-                  )}
                 </div>
               </div>
 
