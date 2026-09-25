@@ -11,9 +11,18 @@ import {
   CheckCircle2, 
   Sparkles,
   CreditCard,
-  AlertCircle
+  AlertCircle,
+  Search,
+  MessageCircle,
+  Tag
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { 
+  findOrder, 
+  createCustomerOrder, 
+  updateOrderProgress, 
+  setRecentOrderCode 
+} from '../services/orderStore';
 
 interface VietQrModalProps {
   isOpen: boolean;
@@ -26,6 +35,7 @@ interface VietQrModalProps {
   };
   t: (key: string) => any;
   zaloLink: string;
+  onTrackOrder?: (caseId: string) => void;
 }
 
 const BANKS = [
@@ -40,7 +50,8 @@ export const VietQrModal: React.FC<VietQrModalProps> = ({
   onClose,
   orderData,
   t,
-  zaloLink
+  zaloLink,
+  onTrackOrder
 }) => {
   const [selectedBank, setSelectedBank] = useState(BANKS[0]);
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -89,17 +100,44 @@ export const VietQrModal: React.FC<VietQrModalProps> = ({
       origin: { y: 0.6 }
     });
 
-    const msg = `[XÁC NHẬN CHUYỂN KHOẢN TỰ ĐỘNG]
+    // Ensure order is saved in store
+    const existing = findOrder(caseId);
+    if (existing) {
+      updateOrderProgress(caseId, {
+        status: 'processing',
+        progress: 35,
+        currentStepIndex: 1,
+        lastUpdate: 'Khách đã quét VietQR thành công',
+        techNote: 'Khách hàng đã bấm xác nhận chuyển khoản VietQR, hệ thống đang đồng bộ với cổng thanh toán liên ngân hàng.'
+      });
+    } else {
+      createCustomerOrder({
+        customId: caseId,
+        service: orderData?.serviceName || 'Dịch vụ Sky Luxury Media',
+        amount: amount,
+        customerName: 'Khách thanh toán VietQR',
+        phone: orderData?.phone || '0334063029',
+        paymentMethod: `VietQR (${selectedBank.id})`,
+        techNote: 'Khách hàng đã bấm xác nhận chuyển khoản VietQR, kỹ thuật viên đang kiểm tra sao kê số dư.'
+      });
+    }
+    setRecentOrderCode(caseId);
+
+    const msg = `[XÁC NHẬN CHUYỂN KHOẢN VIETQR THÀNH CÔNG]
 - Mã đơn/Case: ${caseId}
+- Dịch vụ: ${orderData?.serviceName || 'Dịch vụ mạng xã hội / MMO'}
 - Số tiền: ${formatVND(amount)}
 - Ngân hàng: ${selectedBank.name}
 - Nội dung CK: ${transferContent}
-Tôi đã quét mã VietQR và hoàn tất giao dịch. Nhờ kỹ thuật viên kiểm tra sao kê và kích hoạt xử lý ngay!`;
+Tôi đã quét mã VietQR và thanh toán thành công. Nhờ KTV kiểm tra biến động và kích hoạt xử lý đơn #${caseId}!`;
 
     setTimeout(() => {
       window.open(`${zaloLink}?text=${encodeURIComponent(msg)}`, '_blank');
       onClose();
-    }, 1600);
+      if (onTrackOrder) {
+        onTrackOrder(caseId);
+      }
+    }, 1500);
   };
 
   return (
@@ -148,6 +186,35 @@ Tôi đã quét mã VietQR và hoàn tất giao dịch. Nhờ kỹ thuật viên
                 <span className="font-mono text-white bg-black/60 px-2 py-0.5 rounded-lg border border-luxury-gold/40">
                   {formattedTime}
                 </span>
+              </div>
+
+              {/* Order Code Callout Banner */}
+              <div className="mt-4 p-3.5 bg-gradient-to-r from-luxury-gold/15 to-transparent border border-luxury-gold/40 rounded-2xl flex items-center justify-between gap-3 text-left">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-luxury-gold text-luxury-black font-black flex items-center justify-center shrink-0">
+                    <Tag size={16} />
+                  </div>
+                  <div>
+                    <span className="block text-[10px] font-black uppercase tracking-wider text-luxury-gold">
+                      MÃ ĐƠN HÀNG TRA CỨU TIẾN ĐỘ
+                    </span>
+                    <strong className="font-mono text-base font-black text-white">
+                      #{caseId}
+                    </strong>
+                    <span className="text-[10px] text-white/50 block sm:inline sm:ml-2">
+                      (Dùng mã này tra cứu tiến độ 24/7 trên web)
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleCopy(caseId, 'caseIdHeader')}
+                  className="px-3 py-1.5 bg-luxury-gold text-luxury-black text-xs font-black rounded-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-1 shrink-0"
+                >
+                  {copiedField === 'caseIdHeader' ? <Check size={14} /> : <Copy size={14} />}
+                  <span>{copiedField === 'caseIdHeader' ? 'Đã sao chép' : 'Sao chép mã'}</span>
+                </button>
               </div>
             </div>
 

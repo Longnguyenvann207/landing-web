@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Search, 
@@ -10,104 +10,87 @@ import {
   RefreshCw,
   ShieldCheck,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Sliders,
+  Check,
+  Copy,
+  Zap,
+  Tag
 } from 'lucide-react';
-
-interface OrderCase {
-  id: string;
-  phone: string;
-  customerName: string;
-  platform: string;
-  service: string;
-  status: 'processing' | 'completed' | 'pending';
-  progress: number;
-  technician: string;
-  lastUpdate: string;
-  eta: string;
-  techNote: string;
-  currentStepIndex: number;
-}
-
-const SAMPLE_ORDERS: Record<string, OrderCase> = {
-  'SKY-8821': {
-    id: 'SKY-8821',
-    phone: '0984128219',
-    customerName: 'Trần M*** T**',
-    platform: 'Facebook',
-    service: 'Mở khóa Checkpoint 282 (Úp mặt/CCCD)',
-    status: 'processing',
-    progress: 75,
-    technician: 'Hoàng Nam (Senior Specialist)',
-    lastUpdate: '5 phút trước',
-    eta: '~15 - 20 phút',
-    techNote: 'Đã nạp phôi CCCD chuẩn meta và bypass lớp 1, máy chủ đang đợi webhook xác thực cuối cùng từ Meta California.',
-    currentStepIndex: 2
-  },
-  'SKY-9562': {
-    id: 'SKY-9562',
-    phone: '0334882910',
-    customerName: 'Nguyễn V*** L**',
-    platform: 'Facebook',
-    service: 'Mở khóa Két sắt tím 956 & Đổi pass spam',
-    status: 'completed',
-    progress: 100,
-    technician: 'Quang Huy (Security Lead)',
-    lastUpdate: '30 phút trước',
-    eta: 'Đã hoàn thành',
-    techNote: 'Tài khoản đã về an toàn 100%, đã bật xác thực 2FA mới và kích hoạt gói bảo hiểm chống khóa lại 30 ngày.',
-    currentStepIndex: 3
-  },
-  'SKY-4410': {
-    id: 'SKY-4410',
-    phone: '0903847543',
-    customerName: 'Shop Trang S***',
-    platform: 'TikTok',
-    service: 'Gỡ vi phạm chính sách & Mở khóa TikTok Shop',
-    status: 'processing',
-    progress: 50,
-    technician: 'Đức Anh (TikTok Operations)',
-    lastUpdate: '18 phút trước',
-    eta: '~1 - 2 giờ',
-    techNote: 'Đã nộp bộ hồ sơ phúc khảo chứng từ VAT và giấy phép kinh doanh lên phòng kiểm duyệt TikTok Shop VN.',
-    currentStepIndex: 1
-  },
-  '0334063029': {
-    id: 'SKY-1088',
-    phone: '0334063029',
-    customerName: 'Khách hàng VIP',
-    platform: 'Facebook & MMO',
-    service: 'Cấp bộ Tool Nuôi Nick & Hỗ trợ Unlock Ads',
-    status: 'completed',
-    progress: 100,
-    technician: 'Sky Luxury Master Team',
-    lastUpdate: '10 phút trước',
-    eta: 'Đã hoàn thành',
-    techNote: 'Hệ thống đã kích hoạt bản quyền Tool MMO Pro v4.2 và bàn giao danh sách proxy IPv4 sạch riêng biệt.',
-    currentStepIndex: 3
-  }
-};
+import { OrderCase } from '../types/order';
+import { 
+  findOrder, 
+  getStoredOrders, 
+  subscribeOrders, 
+  getRecentOrderCode 
+} from '../services/orderStore';
 
 interface OrderTrackerProps {
   t: (key: string) => any;
   zaloLink: string;
+  externalSearchCode?: string;
+  onOpenAdminEdit?: (orderId: string) => void;
 }
 
-export const OrderTracker: React.FC<OrderTrackerProps> = ({ t, zaloLink }) => {
+export const OrderTracker: React.FC<OrderTrackerProps> = ({ 
+  t, 
+  zaloLink, 
+  externalSearchCode,
+  onOpenAdminEdit 
+}) => {
   const [query, setQuery] = useState('');
-  const [searchedCase, setSearchedCase] = useState<OrderCase | null>(SAMPLE_ORDERS['SKY-8821']);
+  const [searchedCase, setSearchedCase] = useState<OrderCase | null>(null);
   const [hasSearched, setHasSearched] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
+  const [recentCode, setRecentCode] = useState<string | null>(null);
+  const [copiedCode, setCopiedCode] = useState(false);
+
+  // Initialize with recent order or default sample order
+  useEffect(() => {
+    const recent = getRecentOrderCode();
+    setRecentCode(recent);
+
+    const initialCase = recent 
+      ? findOrder(recent) || findOrder('SKY-8821') 
+      : findOrder('SKY-8821') || getStoredOrders()[0];
+
+    if (initialCase) {
+      setSearchedCase(initialCase);
+      setQuery(initialCase.id);
+    }
+  }, []);
+
+  // Sync external search trigger
+  useEffect(() => {
+    if (externalSearchCode) {
+      setQuery(externalSearchCode);
+      handleSearch(externalSearchCode);
+    }
+  }, [externalSearchCode]);
+
+  // Subscribe to live order updates from Admin or Checkout
+  useEffect(() => {
+    const unsub = subscribeOrders(() => {
+      // Re-fetch current searched case so live changes appear immediately
+      setSearchedCase((prev) => {
+        if (!prev) return null;
+        const fresh = findOrder(prev.id);
+        return fresh || prev;
+      });
+      setRecentCode(getRecentOrderCode());
+    });
+    return () => unsub();
+  }, []);
 
   const handleSearch = (codeToSearch?: string) => {
-    const rawCode = (codeToSearch ?? query).trim().toUpperCase();
+    const rawCode = (codeToSearch ?? query).trim();
     if (!rawCode) return;
 
     setIsSearching(true);
     setTimeout(() => {
-      // Look up exact or by phone or normalize
-      let match = SAMPLE_ORDERS[rawCode] || SAMPLE_ORDERS[rawCode.replace(/-/g, '')];
-      
-      // If not in sample, but query is a phone number or looks like a valid code, create a dynamic live demo case
+      let match = findOrder(rawCode);
+
+      // If not exact in store, check if query looks like valid phone or code to generate a live demo case
       if (!match) {
         const cleanDigits = rawCode.replace(/\D/g, '');
         if (cleanDigits.length >= 9) {
@@ -131,7 +114,13 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ t, zaloLink }) => {
       setSearchedCase(match || null);
       setHasSearched(true);
       setIsSearching(false);
-    }, 400);
+    }, 350);
+  };
+
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
   };
 
   const getStatusBadge = (status: OrderCase['status']) => {
@@ -167,6 +156,9 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ t, zaloLink }) => {
     { title: 'Bàn giao & Bảo hành', desc: 'Kiểm tra bảo mật, kích hoạt bảo hiểm chống khóa lại' }
   ];
 
+  const allStored = getStoredOrders();
+  const sampleCodes = ['SKY-8821', 'SKY-9562', 'SKY-4410', '0334063029'];
+
   return (
     <section id="tracking" className="py-24 relative overflow-hidden bg-luxury-black/60">
       {/* Background ambient lighting */}
@@ -178,7 +170,7 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ t, zaloLink }) => {
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-luxury-gold/10 border border-luxury-gold/20 rounded-full mb-4">
             <ShieldCheck size={16} className="text-luxury-gold" />
             <span className="text-luxury-gold text-xs font-black uppercase tracking-widest">
-              Live Case Tracker
+              Live Case Tracker 24/7
             </span>
           </div>
           <h2 className="text-3xl md:text-5xl font-black mb-4 uppercase tracking-tighter">
@@ -191,13 +183,26 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ t, zaloLink }) => {
         </div>
 
         {/* Search input card */}
-        <div className="bg-glass p-6 md:p-8 rounded-[2.5rem] border-white/10 shadow-2xl mb-8">
+        <div className="bg-glass p-6 md:p-8 rounded-[2.5rem] border border-white/10 shadow-2xl mb-8 relative">
+          {/* Admin shortcut button */}
+          {onOpenAdminEdit && (
+            <button
+              type="button"
+              onClick={() => onOpenAdminEdit(searchedCase?.id || '')}
+              className="absolute top-6 right-6 hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-luxury-gold/10 hover:bg-luxury-gold hover:text-luxury-black border border-luxury-gold/30 text-luxury-gold text-xs font-bold transition-all"
+              title="Mở Bảng Admin để chỉnh sửa tiến độ đơn này"
+            >
+              <Sliders size={14} />
+              <span>Admin chỉnh sửa tiến độ</span>
+            </button>
+          )}
+
           <form 
             onSubmit={(e) => {
               e.preventDefault();
               handleSearch();
             }} 
-            className="flex flex-col sm:flex-row gap-3"
+            className="flex flex-col sm:flex-row gap-3 pt-1"
           >
             <div className="relative flex-grow">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-white/40" size={20} />
@@ -205,7 +210,7 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ t, zaloLink }) => {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={t('orderTracker.placeholder')}
+                placeholder={t('orderTracker.placeholder') || "Nhập Mã Case (ví dụ: SKY-8821) hoặc SĐT..."}
                 className="w-full bg-white/5 border border-white/10 focus:border-luxury-gold text-white rounded-2xl py-4 pl-14 pr-4 outline-none transition-all placeholder:text-white/30 text-sm font-medium"
               />
             </div>
@@ -228,13 +233,34 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ t, zaloLink }) => {
             </button>
           </form>
 
-          {/* Quick sample chips */}
+          {/* Customer Recent Order Chip & Sample Chips */}
           <div className="mt-4 flex flex-wrap items-center gap-2 pt-4 border-t border-white/5 text-xs text-white/40">
+            {recentCode && (
+              <div className="flex items-center gap-2 mr-2 bg-luxury-gold/15 border border-luxury-gold/50 px-3 py-1.5 rounded-xl">
+                <span className="font-bold text-luxury-gold flex items-center gap-1">
+                  <Tag size={13} />
+                  Mã đơn gần nhất của bạn:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery(recentCode);
+                    handleSearch(recentCode);
+                  }}
+                  className="font-mono font-black text-white hover:text-luxury-gold underline transition-all"
+                >
+                  #{recentCode}
+                </button>
+              </div>
+            )}
+
             <span className="font-bold flex items-center gap-1 text-white/60">
               <Sparkles size={14} className="text-luxury-gold" />
               {t('orderTracker.sampleCodes')}
             </span>
-            {['SKY-8821', 'SKY-9562', 'SKY-4410', '0334063029'].map((code) => (
+
+            {/* List sample codes + any user created codes */}
+            {Array.from(new Set([...sampleCodes, ...allStored.map(o => o.id)])).slice(0, 6).map((code) => (
               <button
                 key={code}
                 type="button"
@@ -244,7 +270,7 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ t, zaloLink }) => {
                 }}
                 className={`px-3 py-1 rounded-xl border transition-all font-mono font-bold ${
                   searchedCase?.id === code || searchedCase?.phone === code
-                    ? 'bg-luxury-gold/20 border-luxury-gold text-luxury-gold'
+                    ? 'bg-luxury-gold/20 border-luxury-gold text-luxury-gold shadow-[0_0_10px_rgba(212,175,55,0.2)]'
                     : 'bg-white/5 border-white/10 text-white/70 hover:border-luxury-gold/50 hover:text-white'
                 }`}
               >
@@ -271,17 +297,25 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ t, zaloLink }) => {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-white/10">
                 <div>
                   <div className="flex items-center gap-3 mb-1">
-                    <span className="font-mono text-2xl font-black text-luxury-gold tracking-tight">
+                    <span className="font-mono text-2xl sm:text-3xl font-black text-luxury-gold tracking-tight">
                       #{searchedCase.id}
                     </span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyCode(searchedCase.id)}
+                      className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+                      title="Sao chép mã đơn"
+                    >
+                      {copiedCode ? <Check size={16} className="text-luxury-green" /> : <Copy size={16} />}
+                    </button>
                     {getStatusBadge(searchedCase.status)}
                   </div>
-                  <h3 className="text-lg font-bold text-white/90">
+                  <h3 className="text-lg sm:text-xl font-bold text-white/90">
                     {searchedCase.service}
                   </h3>
                 </div>
 
-                <div className="flex items-center gap-6 text-xs text-white/50">
+                <div className="flex flex-wrap items-center gap-6 text-xs text-white/50">
                   <div>
                     <span className="block text-white/30 uppercase tracking-widest">{t('orderTracker.platform')}</span>
                     <span className="font-bold text-white text-sm">{searchedCase.platform}</span>
@@ -290,6 +324,16 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ t, zaloLink }) => {
                     <span className="block text-white/30 uppercase tracking-widest">{t('orderTracker.customer')}</span>
                     <span className="font-bold text-white text-sm">{searchedCase.customerName}</span>
                   </div>
+                  {onOpenAdminEdit && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenAdminEdit(searchedCase.id)}
+                      className="px-3 py-1.5 rounded-xl bg-luxury-gold/20 text-luxury-gold hover:bg-luxury-gold hover:text-luxury-black text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1 border border-luxury-gold/40"
+                    >
+                      <Sliders size={12} />
+                      <span>Admin chỉnh sửa</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -297,14 +341,17 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ t, zaloLink }) => {
               <div className="py-6">
                 <div className="flex justify-between items-center text-xs font-black uppercase tracking-wider mb-2">
                   <span className="text-white/60">{t('orderTracker.progress')}</span>
-                  <span className="text-luxury-gold font-mono text-sm">{searchedCase.progress}%</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-white/40 text-[10px]">Thời gian thực</span>
+                    <span className="text-luxury-gold font-mono text-base font-black">{searchedCase.progress}%</span>
+                  </div>
                 </div>
-                <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden p-0.5 border border-white/10">
+                <div className="w-full h-3.5 bg-white/5 rounded-full overflow-hidden p-0.5 border border-white/10">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${searchedCase.progress}%` }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
-                    className="h-full rounded-full bg-gradient-to-r from-luxury-gold via-luxury-gold-light to-luxury-gold shadow-[0_0_12px_rgba(212,175,55,0.8)] relative"
+                    className="h-full rounded-full bg-gradient-to-r from-luxury-gold via-luxury-gold-light to-luxury-gold shadow-[0_0_15px_rgba(212,175,55,0.8)] relative"
                   >
                     <div className="absolute inset-0 bg-white/30 animate-pulse" />
                   </motion.div>
@@ -321,7 +368,7 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ t, zaloLink }) => {
               </div>
 
               {/* 4-Step Interactive Stepper */}
-              <div className="py-8">
+              <div className="py-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative">
                   {steps.map((st: any, idx: number) => {
                     const isDone = idx < searchedCase.currentStepIndex;
@@ -365,7 +412,7 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ t, zaloLink }) => {
                     <UserCheck size={16} />
                     <span>{t('orderTracker.technician')} <strong className="text-white">{searchedCase.technician}</strong></span>
                   </div>
-                  <p className="text-xs md:text-sm text-white/70 italic leading-relaxed">
+                  <p className="text-xs md:text-sm text-white/80 italic leading-relaxed">
                     "{searchedCase.techNote}"
                   </p>
                 </div>

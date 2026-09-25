@@ -234,14 +234,23 @@ const COUPONS: Record<string, { discountPercent?: number; discountAmount?: numbe
   'TOOL10': { discountPercent: 10, label: 'Giảm 10% Tool MMO' }
 };
 
+import { createCustomerOrder } from '../services/orderStore';
+
 interface PricingCalculatorProps {
   t: (key: string) => any;
   zaloLink: string;
   externalCoupon?: string;
   onOpenVietQr?: (order: { caseId: string; amount: number; serviceName: string }) => void;
+  onOrderPlaced?: (order: { id: string; service: string; amount: number }) => void;
 }
 
-export const PricingCalculator: React.FC<PricingCalculatorProps> = ({ t, zaloLink, externalCoupon, onOpenVietQr }) => {
+export const PricingCalculator: React.FC<PricingCalculatorProps> = ({ 
+  t, 
+  zaloLink, 
+  externalCoupon, 
+  onOpenVietQr,
+  onOrderPlaced
+}) => {
   const [selectedPlatformId, setSelectedPlatformId] = useState('facebook');
   const [selectedServiceId, setSelectedServiceId] = useState('fb-unlock-282');
   const [quantity, setQuantity] = useState(1);
@@ -340,7 +349,18 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({ t, zaloLin
   };
 
   const handleOrder = () => {
+    // Automatically create a trackable order in the store
+    const createdOrder = createCustomerOrder({
+      service: currentService.name,
+      platform: currentPlatform.name,
+      amount: finalTotal,
+      customerName: 'Khách cấu hình trực tuyến',
+      phone: '0334063029',
+      techNote: `Đơn đặt từ bảng tính giá: ${quantity} ${currentService.unit}. Tốc độ: ${isVipSpeed ? 'Hỏa tốc VIP' : 'Tiêu chuẩn'}. Bảo hành: ${isVipWarranty ? 'VIP 60 ngày' : 'Tiêu chuẩn'}.`
+    });
+
     const summaryText = `[ĐƠN HÀNG SKY LUXURY MEDIA]
+- Mã đơn hàng: #${createdOrder.id}
 - Nền tảng: ${currentPlatform.name}
 - Dịch vụ: ${currentService.name}
 - Số lượng: ${quantity.toLocaleString()} ${currentService.unit}
@@ -348,7 +368,8 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({ t, zaloLin
 - Gói bảo hành: ${isVipWarranty ? 'Bảo hiểm Vàng VIP 60 ngày' : 'Tiêu chuẩn 7 ngày'}
 ${appliedCoupon ? `- Mã giảm giá: ${appliedCoupon.code} (-${formatVND(discountAmount)})` : ''}
 - TỔNG THANH TOÁN: ${formatVND(finalTotal)}
-- Ước tính bàn giao: ${isVipSpeed ? '15 - 30 phút' : currentService.eta}`;
+- Ước tính bàn giao: ${isVipSpeed ? '15 - 30 phút' : currentService.eta}
+- Tra cứu tiến độ tại: ${window.location.origin}/#tracking`;
 
     navigator.clipboard.writeText(summaryText);
     setIsCopied(true);
@@ -358,11 +379,17 @@ ${appliedCoupon ? `- Mã giảm giá: ${appliedCoupon.code} (-${formatVND(discou
       origin: { y: 0.6 }
     });
 
+    if (onOrderPlaced) {
+      onOrderPlaced({
+        id: createdOrder.id,
+        service: currentService.name,
+        amount: finalTotal
+      });
+    }
+
     setTimeout(() => {
       setIsCopied(false);
-      const encodedMsg = encodeURIComponent(summaryText);
-      window.open(`${zaloLink}?text=${encodedMsg}`, '_blank');
-    }, 1500);
+    }, 2000);
   };
 
   return (
@@ -649,9 +676,17 @@ ${appliedCoupon ? `- Mã giảm giá: ${appliedCoupon.code} (-${formatVND(discou
                 <button
                   type="button"
                   onClick={() => {
-                    const dynamicCaseId = `SKY-${Math.floor(1000 + Math.random() * 9000)}`;
+                    const newOrder = createCustomerOrder({
+                      service: currentService.name,
+                      platform: currentPlatform.name,
+                      amount: finalTotal,
+                      customerName: 'Khách thanh toán VietQR',
+                      phone: '0334063029',
+                      paymentMethod: 'VietQR Chuyển khoản',
+                      techNote: `Khách khởi tạo thanh toán VietQR cho dịch vụ ${currentService.name}. Đang đợi xác nhận biến động số dư.`
+                    });
                     onOpenVietQr({
-                      caseId: dynamicCaseId,
+                      caseId: newOrder.id,
                       amount: finalTotal,
                       serviceName: currentService.name
                     });
