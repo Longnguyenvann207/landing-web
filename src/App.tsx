@@ -53,7 +53,8 @@ import {
   Check,
   Gift,
   Share2,
-  Sparkles
+  Sparkles,
+  QrCode
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { translations } from './translations';
@@ -61,6 +62,11 @@ import { OrderTracker } from './components/OrderTracker';
 import { PricingCalculator } from './components/PricingCalculator';
 import { AccountDiagnostic } from './components/AccountDiagnostic';
 import { LuckyWheelModal } from './components/LuckyWheelModal';
+import { ProofOfWork } from './components/ProofOfWork';
+import { VietQrModal } from './components/VietQrModal';
+import { VipLoyalty } from './components/VipLoyalty';
+import { MmoUtilities } from './components/MmoUtilities';
+import { FloatingActionDock } from './components/FloatingActionDock';
 
 // --- Types ---
 type Language = 'vi' | 'en';
@@ -652,7 +658,13 @@ const ReadingProgressBar = () => {
   );
 };
 
-const Navbar = ({ onOpenLuckyWheel }: { onOpenLuckyWheel?: () => void }) => {
+const Navbar = ({ 
+  onOpenLuckyWheel, 
+  onOpenVietQr 
+}: { 
+  onOpenLuckyWheel?: () => void; 
+  onOpenVietQr?: () => void; 
+}) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { lang, setLang, t } = useTranslation();
@@ -668,33 +680,35 @@ const Navbar = ({ onOpenLuckyWheel }: { onOpenLuckyWheel?: () => void }) => {
 
   const navLinks = [
     { name: t('nav.home'), href: '#home' },
-    { name: t('nav.diagnostic'), href: '#diagnostic' },
+    { name: t('nav.proof'), href: '#proof-of-work' },
     { name: t('nav.pricingCalc'), href: '#pricing-calculator' },
+    { name: t('nav.diagnostic'), href: '#diagnostic' },
     { name: t('nav.tracking'), href: '#tracking' },
+    { name: t('nav.tools'), href: '#tools' },
+    { name: t('nav.loyalty'), href: '#loyalty' },
     { name: t('nav.services'), href: '#services' },
-    { name: t('nav.contact'), href: '#contact' },
   ];
 
   return (
-    <nav className={`fixed top-0 left-0 w-full z-[100] transition-all duration-500 ${isScrolled ? 'bg-luxury-black/80 backdrop-blur-xl py-4 border-b border-white/5' : 'bg-transparent py-6'}`}>
+    <nav className={`fixed top-0 left-0 w-full z-[100] transition-all duration-300 ${isScrolled ? 'bg-luxury-black/90 backdrop-blur-xl py-2.5 shadow-[0_4px_30px_rgba(0,0,0,0.8)] border-b border-luxury-gold/15' : 'bg-transparent py-5'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <a 
           href="#" 
           onClick={() => setIsMobileMenuOpen(false)}
-          className="text-2xl font-black tracking-tighter flex items-center gap-2"
+          className={`font-black tracking-tighter flex items-center gap-2 transition-all duration-300 ${isScrolled ? 'text-xl' : 'text-2xl'}`}
         >
-          <Zap className="text-luxury-gold" size={28} />
+          <Zap className="text-luxury-gold" size={isScrolled ? 24 : 28} />
           <span>SKY LUXURY <span className="text-luxury-gold">MEDIA</span></span>
         </a>
 
         {/* Desktop Nav */}
-        <div className="hidden lg:flex items-center gap-6 xl:gap-8">
-          <div className="flex items-center gap-5 xl:gap-6">
+        <div className="hidden lg:flex items-center gap-5 xl:gap-6">
+          <div className="flex items-center gap-4 xl:gap-5">
             {navLinks.map((link) => (
               <a 
                 key={link.name} 
                 href={link.href} 
-                className="text-xs xl:text-sm font-bold uppercase tracking-wider hover:text-luxury-gold transition-colors whitespace-nowrap"
+                className="text-[11px] xl:text-xs font-bold uppercase tracking-wider hover:text-luxury-gold transition-colors whitespace-nowrap"
               >
                 {link.name}
               </a>
@@ -703,28 +717,40 @@ const Navbar = ({ onOpenLuckyWheel }: { onOpenLuckyWheel?: () => void }) => {
               <button
                 type="button"
                 onClick={onOpenLuckyWheel}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-luxury-gold/15 hover:bg-luxury-gold hover:text-luxury-black border border-luxury-gold/40 rounded-xl text-xs font-black uppercase tracking-wider text-luxury-gold transition-all shadow-[0_0_15px_rgba(212,175,55,0.2)]"
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-luxury-gold/15 hover:bg-luxury-gold hover:text-luxury-black border border-luxury-gold/40 rounded-xl text-[11px] font-black uppercase tracking-wider text-luxury-gold transition-all shadow-[0_0_15px_rgba(212,175,55,0.2)]"
               >
-                <Sparkles size={14} className="animate-spin" />
+                <Sparkles size={12} className="animate-spin" />
                 <span>{t('nav.luckyWheel')}</span>
               </button>
             )}
           </div>
 
-          <div className="flex items-center gap-3 border-l border-white/10 pl-6">
+          <div className="flex items-center gap-3 border-l border-white/10 pl-5">
+            {onOpenVietQr && (
+              <button
+                type="button"
+                onClick={onOpenVietQr}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-luxury-gold hover:text-luxury-black border border-luxury-gold/40 rounded-xl text-xs font-black uppercase tracking-wider text-luxury-gold transition-all"
+                title="Quét VietQR 24/7"
+              >
+                <QrCode size={14} />
+                <span>VietQR</span>
+              </button>
+            )}
+
             {/* Language Switcher */}
             <div className="flex bg-white/5 p-1 rounded-xl border border-white/5">
               <button 
                 onClick={() => setLang('vi')}
                 aria-label="Switch language to Vietnamese"
-                className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${lang === 'vi' ? 'bg-luxury-gold text-luxury-black shadow-lg' : 'text-white/40 hover:text-white'}`}
+                className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all ${lang === 'vi' ? 'bg-luxury-gold text-luxury-black shadow-lg' : 'text-white/40 hover:text-white'}`}
               >
                 VN
               </button>
               <button 
                 onClick={() => setLang('en')}
                 aria-label="Switch language to English"
-                className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${lang === 'en' ? 'bg-luxury-gold text-luxury-black shadow-lg' : 'text-white/40 hover:text-white'}`}
+                className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all ${lang === 'en' ? 'bg-luxury-gold text-luxury-black shadow-lg' : 'text-white/40 hover:text-white'}`}
               >
                 EN
               </button>
@@ -736,12 +762,12 @@ const Navbar = ({ onOpenLuckyWheel }: { onOpenLuckyWheel?: () => void }) => {
               aria-label="Toggle theme"
               className="p-2 bg-white/5 rounded-xl border border-white/5 text-luxury-gold hover:scale-110 transition-all"
             >
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
 
             <a 
               href="#contact" 
-              className="px-5 py-2.5 bg-luxury-gold text-luxury-black font-black text-xs rounded-xl uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-luxury-gold/20 whitespace-nowrap"
+              className="px-4 py-2 bg-luxury-gold text-luxury-black font-black text-xs rounded-xl uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-luxury-gold/20 whitespace-nowrap"
             >
               {t('nav.support')}
             </a>
@@ -791,6 +817,20 @@ const Navbar = ({ onOpenLuckyWheel }: { onOpenLuckyWheel?: () => void }) => {
                 >
                   <Sparkles size={16} />
                   <span>{t('nav.luckyWheel')}</span>
+                </button>
+              )}
+
+              {onOpenVietQr && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onOpenVietQr();
+                  }}
+                  className="w-full py-3.5 bg-white/10 border border-luxury-gold/40 text-luxury-gold font-black rounded-xl text-xs uppercase tracking-widest flex items-center justify-center gap-2"
+                >
+                  <QrCode size={16} />
+                  <span>Quét mã VietQR 24/7</span>
                 </button>
               )}
 
@@ -2190,7 +2230,7 @@ const SocialProof = ({ config = { showSignups: true, showPurchases: true } }: So
           initial={{ opacity: 0, x: -50, scale: 0.8 }}
           animate={{ opacity: 1, x: 0, scale: 1 }}
           exit={{ opacity: 0, x: -50, scale: 0.8 }}
-          className="fixed bottom-8 left-8 z-[90] hidden md:flex items-center gap-4 p-4 bg-luxury-black/80 backdrop-blur-xl rounded-2xl border border-luxury-gold/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)] max-w-xs"
+          className="fixed bottom-28 left-6 z-[85] hidden md:flex items-center gap-4 p-4 bg-luxury-black/90 backdrop-blur-xl rounded-2xl border border-luxury-gold/20 shadow-[0_20px_50px_rgba(0,0,0,0.6)] max-w-xs"
         >
           <div className="relative">
             <div className="w-12 h-12 bg-gradient-to-br from-luxury-gold to-luxury-gold-light rounded-2xl flex items-center justify-center text-luxury-black shrink-0 shadow-lg">
@@ -2450,6 +2490,8 @@ export default function App() {
   const [isReferralOpen, setIsReferralOpen] = useState(false);
   const [isLuckyWheelOpen, setIsLuckyWheelOpen] = useState(false);
   const [activeCoupon, setActiveCoupon] = useState<string | undefined>(undefined);
+  const [isVietQrOpen, setIsVietQrOpen] = useState(false);
+  const [vietQrOrderData, setVietQrOrderData] = useState<{ caseId?: string; amount?: number; serviceName?: string } | undefined>(undefined);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -2496,19 +2538,42 @@ export default function App() {
           <ScrollProgress />
           <CustomCursor />
           <BackgroundParticles />
-          <Navbar onOpenLuckyWheel={() => setIsLuckyWheelOpen(true)} />
+          <Navbar 
+            onOpenLuckyWheel={() => setIsLuckyWheelOpen(true)} 
+            onOpenVietQr={() => {
+              setVietQrOrderData({ caseId: `SKY-${Math.floor(1000 + Math.random() * 9000)}`, amount: 500000 });
+              setIsVietQrOpen(true);
+            }}
+          />
           <main>
             <Hero />
             <ExploreServicesCTA />
             
-            {/* Feature 3: Bác sĩ tài khoản AI - Chẩn đoán lỗi tự động */}
+            {/* Feature 1: Thư viện bằng chứng thành công Trước/Sau */}
+            <ProofOfWork t={t} zaloLink={ZALO_LINK} />
+
+            {/* Bác sĩ tài khoản AI - Chẩn đoán lỗi tự động */}
             <AccountDiagnostic t={t} zaloLink={ZALO_LINK} />
 
-            {/* Feature 2: Bộ tính giá tự động & Dự toán ngân sách */}
-            <PricingCalculator t={t} zaloLink={ZALO_LINK} externalCoupon={activeCoupon} />
+            {/* Bộ tính giá tự động & Dự toán ngân sách */}
+            <PricingCalculator 
+              t={t} 
+              zaloLink={ZALO_LINK} 
+              externalCoupon={activeCoupon} 
+              onOpenVietQr={(order) => {
+                setVietQrOrderData(order);
+                setIsVietQrOpen(true);
+              }}
+            />
 
-            {/* Feature 1: Tra cứu tiến độ đơn hàng / Case Unlock */}
+            {/* Tra cứu tiến độ đơn hàng / Case Unlock */}
             <OrderTracker t={t} zaloLink={ZALO_LINK} />
+
+            {/* Feature 4: Trung tâm công cụ tiện ích MMO miễn phí */}
+            <MmoUtilities t={t} />
+
+            {/* Feature 3: Bảng điều khiển VIP & Chính sách đại lý */}
+            <VipLoyalty t={t} zaloLink={ZALO_LINK} />
 
             <TrustSection />
             <StatsSection />
@@ -2530,40 +2595,16 @@ export default function App() {
           </main>
           <Footer />
 
-          {/* Floating Action Buttons */}
-          <div className="fixed bottom-8 left-8 z-[90] flex flex-col gap-3">
-            {/* Feature 5: Floating Lucky Wheel Trigger */}
-            <motion.button
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setIsLuckyWheelOpen(true)}
-              className="w-14 h-14 bg-gradient-to-br from-luxury-gold via-luxury-gold-light to-luxury-gold text-luxury-black rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(212,175,55,0.4)] group overflow-hidden border border-white/20 relative"
-              title={t('luckyWheel.floatingBtn')}
-            >
-              <div className="absolute inset-0 bg-white/30 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-              <Sparkles size={24} className="relative z-10 animate-spin" />
-              <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-luxury-neon opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-luxury-neon"></span>
-              </span>
-            </motion.button>
-
-            {/* Referral Trigger */}
-            <motion.button
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setIsReferralOpen(true)}
-              className="w-14 h-14 bg-luxury-gold text-luxury-black rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(212,175,55,0.3)] group overflow-hidden"
-              title={t('referral.title')}
-            >
-              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-              <Gift size={24} className="relative z-10" />
-            </motion.button>
-          </div>
+          {/* Floating Action Dock (Auto-shrink on scroll & Collapsible) */}
+          <FloatingActionDock 
+            onOpenVietQr={() => {
+              setVietQrOrderData({ caseId: `SKY-${Math.floor(1000 + Math.random() * 9000)}`, amount: 500000 });
+              setIsVietQrOpen(true);
+            }}
+            onOpenLuckyWheel={() => setIsLuckyWheelOpen(true)}
+            onOpenReferral={() => setIsReferralOpen(true)}
+            t={t}
+          />
 
           <ReferralModal isOpen={isReferralOpen} onClose={() => setIsReferralOpen(false)} />
           
@@ -2573,6 +2614,15 @@ export default function App() {
             onClose={() => setIsLuckyWheelOpen(false)} 
             onApplyCoupon={(code) => setActiveCoupon(code)}
             t={t}
+          />
+
+          {/* Feature 2: Smart VietQR Payment Modal */}
+          <VietQrModal 
+            isOpen={isVietQrOpen} 
+            onClose={() => setIsVietQrOpen(false)} 
+            orderData={vietQrOrderData}
+            t={t}
+            zaloLink={ZALO_LINK}
           />
 
           <ZaloButton />

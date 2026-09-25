@@ -238,9 +238,10 @@ interface PricingCalculatorProps {
   t: (key: string) => any;
   zaloLink: string;
   externalCoupon?: string;
+  onOpenVietQr?: (order: { caseId: string; amount: number; serviceName: string }) => void;
 }
 
-export const PricingCalculator: React.FC<PricingCalculatorProps> = ({ t, zaloLink, externalCoupon }) => {
+export const PricingCalculator: React.FC<PricingCalculatorProps> = ({ t, zaloLink, externalCoupon, onOpenVietQr }) => {
   const [selectedPlatformId, setSelectedPlatformId] = useState('facebook');
   const [selectedServiceId, setSelectedServiceId] = useState('fb-unlock-282');
   const [quantity, setQuantity] = useState(1);
@@ -629,7 +630,7 @@ ${appliedCoupon ? `- Mã giảm giá: ${appliedCoupon.code} (-${formatVND(discou
               <button
                 type="button"
                 onClick={handleOrder}
-                className="w-full py-5 bg-luxury-gold text-luxury-black font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all glow-gold flex items-center justify-center gap-2"
+                className="w-full py-5 bg-luxury-gold text-luxury-black font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all glow-gold flex items-center justify-center gap-2 mb-3"
               >
                 {isCopied ? (
                   <>
@@ -643,6 +644,24 @@ ${appliedCoupon ? `- Mã giảm giá: ${appliedCoupon.code} (-${formatVND(discou
                   </>
                 )}
               </button>
+
+              {onOpenVietQr && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const dynamicCaseId = `SKY-${Math.floor(1000 + Math.random() * 9000)}`;
+                    onOpenVietQr({
+                      caseId: dynamicCaseId,
+                      amount: finalTotal,
+                      serviceName: currentService.name
+                    });
+                  }}
+                  className="w-full py-4 bg-white/5 hover:bg-white/10 text-luxury-gold border border-luxury-gold/30 font-black text-xs uppercase tracking-wider rounded-2xl transition-all flex items-center justify-center gap-2"
+                >
+                  <Sparkles size={16} />
+                  <span>QUÉT MÃ VIETQR THANH TOÁN NGAY</span>
+                </button>
+              )}
 
               <p className="text-[11px] text-white/40 text-center mt-4 leading-relaxed">
                 {t('pricingCalculator.directConsult')}
